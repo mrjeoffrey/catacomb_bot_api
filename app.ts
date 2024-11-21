@@ -8,6 +8,9 @@ import settingsRoutes from './routes/settingsRoutes';
 import levelRoutes from './routes/levelRoutes';
 import Level from './models/levelModel';
 import Settings from './models/settingsModel';
+import User from './models/userModel';
+import Admin from './models/adminModel';
+import Task from './models/taskModel';
 
 dotenv.config();
 
@@ -19,7 +22,7 @@ app.use(express.json());
 // Connect to Database
 connectDB();
 
-// Seed initial data for levels and settings
+// Seed initial data
 const seedInitialData = async () => {
     try {
         // Seed Levels
@@ -55,6 +58,45 @@ const seedInitialData = async () => {
             };
             await Settings.create(initialSettings);
             console.log('Initial settings seeded.');
+        }
+
+        // Seed Admins
+        const adminCount = await Admin.countDocuments();
+        if (adminCount === 0) {
+            const initialAdmins = [
+                { name: 'Admin One', email: 'admin1@example.com', password: 'password123' },
+                { name: 'Admin Two', email: 'admin2@example.com', password: 'password123' },
+            ];
+            await Admin.insertMany(initialAdmins);
+            console.log('Initial admins seeded.');
+        }
+
+        // Seed Users
+        const userCount = await User.countDocuments();
+        if (userCount === 0) {
+            const initialUsers = Array.from({ length: 20 }, (_, i) => ({
+                telegram_id: 1000 + i,
+                username: `user${i + 1}`,
+                gold: Math.floor(Math.random() * 500),
+                xp: Math.floor(Math.random() * 5000),
+                wallet_address: `0x${Math.random().toString(36).substring(2, 15)}`,
+    IP_address: `192.168.1.${i + 1}`, // Generate a unique IP address
+            }));
+            await User.insertMany(initialUsers);
+            console.log('Initial users seeded.');
+        }
+
+        // Seed Tasks
+        const taskCount = await Task.countDocuments();
+        if (taskCount === 0) {
+            const initialTasks = Array.from({ length: 10 }, (_, i) => ({
+                name: `Task ${i + 1}`,
+                description: `Complete Task ${i + 1} to earn rewards.`,
+                gold_reward: Math.floor(Math.random() * 301) + 200, // Random number between 200 and 500
+                xp_reward: Math.floor(Math.random() * 201) + 300,  // Random number between 300 and 500
+            }));
+            await Task.insertMany(initialTasks);
+            console.log('Initial tasks seeded.');
         }
     } catch (error) {
         console.error('Error seeding initial data:', error);
