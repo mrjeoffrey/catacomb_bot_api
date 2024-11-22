@@ -1,6 +1,20 @@
 import { Request, Response } from "express";
 import User from "../models/userModel";
 
+// Get All Users
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const user = await User.find();
+    console.log("/user", user);
+    if (!user) {
+      return res.status(404).json({ message: "Users not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // Get User Info
 export const getUserInfo = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;

@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
 import connectDB from "./utils/database";
 import adminRoutes from "./routes/adminRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -12,9 +13,13 @@ import User from "./models/userModel";
 import Admin from "./models/adminModel";
 import Task from "./models/taskModel";
 
+declare module 'cors';
 dotenv.config();
 
 const app = express();
+
+// Enable CORS
+app.use(cors());
 
 // Middleware
 app.use(express.json());
@@ -202,6 +207,14 @@ const seedInitialData = async () => {
 seedInitialData();
 
 // Routes
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log("Headers:", req.headers);
+  if (Object.keys(req.body).length > 0) {
+    console.log("Body:", req.body);
+  }
+  next();
+});
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/task", taskRoutes);
