@@ -1,13 +1,6 @@
-import { Telegraf } from 'telegraf';
+import TelegramBot from "node-telegram-bot-api";
+import dotenv from "dotenv";
+import { TELEGRAM_BOT_TOKEN } from "../config/config";
+dotenv.config();
 
-const botToken = process.env.TELEGRAM_BOT_TOKEN;
-
-if (!botToken) {
-    throw new Error('Telegram Bot token is not provided in the environment variables');
-}
-
-export const bot = new Telegraf(botToken);
-
-bot.start((ctx) => ctx.reply('Welcome to the Telegram Bot!'));
-
-export default bot;
+export const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });

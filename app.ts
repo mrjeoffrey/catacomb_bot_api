@@ -12,8 +12,11 @@ import Settings from "./models/settingsModel";
 import User from "./models/userModel";
 import Admin from "./models/adminModel";
 import Task from "./models/taskModel";
-
-declare module 'cors';
+import stakingRoutes from "./routes/stakingRoutes";
+import { PORT } from "./config/config";
+import { bot } from "./utils/telegramBot";
+import { handleMenu } from "./bot/handlers";
+declare module "cors";
 dotenv.config();
 
 const app = express();
@@ -220,9 +223,9 @@ app.use("/api/user", userRoutes);
 app.use("/api/task", taskRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/levels", levelRoutes);
-
-const PORT = process.env.PORT || 5000;
-
+app.use("/api/staking", stakingRoutes);
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+bot.onText(/\/start/, handleMenu);
