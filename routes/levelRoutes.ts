@@ -1,8 +1,8 @@
-import express from 'express';
-import { getLevelInfo } from '../controllers/levelController';
+import express from "express";
+import { getLevelInfo } from "../controllers/levelController";
 
 const router = express.Router();
 
-router.get('/', getLevelInfo);
+router.get("/", getLevelInfo);
 
 export default router;

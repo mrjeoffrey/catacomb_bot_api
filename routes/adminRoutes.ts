@@ -1,22 +1,23 @@
-import express from 'express';
+import express from "express";
 import {
-    registerAdmin,
-    loginAdmin,
-    blockUser,
-    editTask,
-    updateSettings,
-    insertLevel,
-    updateLevel,
-} from '../controllers/adminController';
+  registerAdmin,
+  loginAdmin,
+  blockUser,
+  editTask,
+  updateSettings,
+  insertLevel,
+  updateLevel,
+} from "../controllers/adminController";
+import { authenticateToken } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
-router.post('/register', registerAdmin);
-router.post('/login', loginAdmin);
-router.post('/block-user', blockUser);
-router.put('/edit-task', editTask);
-router.put('/update-settings', updateSettings);
-router.post('/insert-level', insertLevel);
-router.put('/update-level', updateLevel);
+router.post("/register", registerAdmin);
+router.post("/login", loginAdmin);
+router.post("/block-user", authenticateToken, blockUser);
+router.put("/edit-task", authenticateToken, editTask);
+router.put("/update-settings", authenticateToken, updateSettings);
+router.post("/insert-level", authenticateToken, insertLevel);
+router.put("/update-level", authenticateToken, updateLevel);
 
 export default router;
