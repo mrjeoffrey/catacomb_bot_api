@@ -14,7 +14,7 @@ import Admin from "./models/adminModel";
 import Task from "./models/taskModel";
 import stakingRoutes from "./routes/stakingRoutes";
 import { PORT } from "./config/config";
-import { bot } from "./utils/telegramBot";
+// import { bot } from "./utils/telegramBot";
 import { handleMenu } from "./bot/handlers";
 declare module "cors";
 dotenv.config();
@@ -210,14 +210,15 @@ const seedInitialData = async () => {
 seedInitialData();
 
 // Routes
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log("Headers:", req.headers);
-  if (Object.keys(req.body).length > 0) {
-    console.log("Body:", req.body);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+//   console.log("Headers:", req.headers);
+//   if (Object.keys(req.body).length > 0) {
+//     console.log("Body:", req.body);
+//   }
+//   next();
+// });
+
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/task", taskRoutes);
@@ -228,4 +229,4 @@ app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
-bot.onText(/\/start/, handleMenu);
+// bot.onText(/\/start/, handleMenu);
