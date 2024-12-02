@@ -8,10 +8,11 @@ export interface IUser extends Document {
   xp: number;
   wallet_address: string;
   task_done: Types.ObjectId[]; // Reference Task IDs
-  chest_opened_history: { time_opened: Date; level: number }[];
+  chest_opened_history: { time_opened: Date; xp: number; gold: number }[];
   IP_address: string;
   referred_by: Types.ObjectId | null; // Reference User ID
   blocked: boolean;
+  created_at: Date;
 }
 
 // Define the User schema
@@ -25,12 +26,14 @@ const userSchema: Schema = new Schema({
   chest_opened_history: [
     {
       time_opened: { type: Date, default: Date.now },
-      level: { type: Number, required: true },
+      xp: { type: Number, required: true },
+      gold: { type: Number, required: true },
     },
   ],
   IP_address: { type: String },
   referred_by: { type: Types.ObjectId, ref: "User", default: null }, // Reference another User
   blocked: { type: Boolean, default: false },
+  created_at: { type: Date, default: Date.now },
 });
 
 export default mongoose.model<IUser>("User", userSchema);

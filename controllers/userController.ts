@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import User from "../models/userModel";
+import { getUserLevel } from "./levelController";
 
 // Get All Users
 export const getUsers = async (req: Request, res: Response) => {
@@ -14,25 +15,23 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
-// Create a New User
+//
 export const createUser = async (req: Request, res: Response) => {
   const { telegram_id, username, wallet_address, IP_address, referred_by } =
     req.body;
 
   try {
-    // Check if the user already exists
     const existingUser = await User.findOne({ telegram_id });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Create a new user
     const newUser = new User({
       telegram_id,
       username,
       wallet_address,
       IP_address,
-      referred_by: referred_by || null, // Ensure this is null if not provided
+      referred_by: referred_by || null,
     });
 
     await newUser.save();
@@ -46,6 +45,35 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
+const calculateChestOpeningTime = (
+  user: any,
+  seconds_for_next_chest_opening: number
+): number => {
+  const now = Date.now();
+
+  if (user.chest_opened_history && user.chest_opened_history.length > 0) {
+    const lastChestOpened =
+      user.chest_opened_history[user.chest_opened_history.length - 1];
+    const lastOpenedTime = new Date(lastChestOpened.time_opened).getTime();
+
+    const timeDifference = (now - lastOpenedTime) / 1000;
+
+    if (timeDifference >= seconds_for_next_chest_opening) {
+      return 0;
+    } else {
+      return Math.floor(seconds_for_next_chest_opening - timeDifference);
+    }
+  } else {
+    const userJoinedTime = new Date(user.created_at).getTime();
+    const timeDifference = (now - userJoinedTime) / 1000;
+    if (timeDifference >= seconds_for_next_chest_opening) {
+      return 0;
+    } else {
+      return Math.floor(seconds_for_next_chest_opening - timeDifference);
+    }
+  }
+};
+
 // Get User Info
 export const getUserInfo = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;
@@ -55,8 +83,98 @@ export const getUserInfo = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json(user);
+
+    const startOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
+
+    // Calculate the user's season XP and gold
+    const chestOpenedThisSeason = user.chest_opened_history.filter(
+      (entry) => entry.time_opened >= startOfMonth
+    );
+
+    const seasonXP = chestOpenedThisSeason.reduce(
+      (sum, entry) => sum + entry.xp,
+      0
+    );
+    const seasonGold = chestOpenedThisSeason.reduce(
+      (sum, entry) => sum + entry.gold,
+      0
+    );
+    const { level, seconds_for_next_chest_opening } = getUserLevel(seasonXP);
+    // Calculate the remaining time until the next chest opening
+    const remainingSeconds = calculateChestOpeningTime(
+      user,
+      seconds_for_next_chest_opening
+    );
+    // Aggregate rankings for active users
+    const rankings = await User.aggregate([
+      // Step 1: Filter active users (not blocked)
+      { $match: { blocked: false } },
+      // Step 2: Calculate season gold and XP for each user
+      {
+        $project: {
+          username: 1,
+          telegram_id: 1,
+          season_gold: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$chest_opened_history",
+                    as: "entry",
+                    cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                  },
+                },
+                as: "entry",
+                in: "$$entry.gold",
+              },
+            },
+          },
+          season_xp: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$chest_opened_history",
+                    as: "entry",
+                    cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                  },
+                },
+                as: "entry",
+                in: "$$entry.xp",
+              },
+            },
+          },
+        },
+      },
+      // Step 3: Sort first by season gold in descending order, then by season XP in descending order
+      { $sort: { season_gold: -1, season_xp: -1 } },
+    ]);
+
+    // Find the user's rank
+    const userRank =
+      rankings.findIndex((r) => r.telegram_id === telegram_id) + 1;
+
+    // Convert the Mongoose document to a plain JavaScript object
+    const userPlainObject = user.toObject();
+
+    // Add the season_xp, season_gold, and rank properties
+    const userInfo = {
+      ...userPlainObject,
+      season_xp: seasonXP,
+      season_gold: seasonGold,
+      level: level,
+      seconds: seconds_for_next_chest_opening,
+      remainingSeconds: remainingSeconds,
+      rank: userRank,
+    };
+
+    res.json(userInfo);
   } catch (error) {
+    console.error("Error fetching user info with ranking:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -88,6 +206,8 @@ export const completeTask = async (req: Request, res: Response) => {
 };
 
 // Open Chest
+import Settings from "../models/settingsModel"; // Import the Settings model
+
 export const openChest = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;
 
@@ -97,17 +217,32 @@ export const openChest = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Logic for chest opening, add gold and xp rewards
-    const gold_reward = 100; // Example gold reward
-    const xp_reward = 50; // Example XP reward
-
+    // Fetch the settings
+    const settings = await Settings.findOne();
+    if (!settings) {
+      return res.status(500).json({ message: "Settings not found" });
+    }
+    const golds = settings.opening_chest_earning.golds;
+    const gold_reward = golds[Math.floor(Math.random() * golds.length)];
+    const xp_reward = settings.opening_chest_earning.xp;
     user.gold += gold_reward;
     user.xp += xp_reward;
-    user.chest_opened_history.push({ time_opened: new Date(), level: user.xp });
+
+    user.chest_opened_history.push({
+      time_opened: new Date(),
+      xp: xp_reward,
+      gold: gold_reward,
+    });
 
     await user.save();
-    res.json({ message: "Chest opened", gold: gold_reward, xp: xp_reward });
+
+    res.json({
+      message: "Chest opened",
+      gold: gold_reward,
+      xp: xp_reward,
+    });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };

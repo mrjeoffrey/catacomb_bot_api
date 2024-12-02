@@ -16,6 +16,7 @@ import stakingRoutes from "./routes/stakingRoutes";
 import { PORT } from "./config/config";
 import { bot } from "./utils/telegramBot";
 import { handleMenu } from "./bot/handlers";
+import { loadLevelsInMemory } from "./controllers/levelController";
 declare module "cors";
 dotenv.config();
 
@@ -208,6 +209,8 @@ const seedInitialData = async () => {
 
 // Call seeding function
 seedInitialData();
+
+loadLevelsInMemory();
 
 // Routes
 // app.use((req, res, next) => {

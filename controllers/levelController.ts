@@ -91,3 +91,68 @@ export const removeLevel = async (req: Request, res: Response) => {
       .json({ message: error?.message || "Failed to delete level" });
   }
 };
+
+let levelsCache: any[] = [];
+
+export const loadLevelsInMemory = async () => {
+  try {
+    levelsCache = await Level.find().sort({ xp_required: 1 }); // Sort levels by XP required
+    console.log("Levels loaded into memory");
+  } catch (error) {
+    console.error("Error loading levels:", error);
+  }
+};
+
+let userLevelsCache: {
+  [key: string]: {
+    level: number;
+    seconds_for_next_chest_opening: number;
+    expiry: number;
+  };
+} = {};
+
+export const getUserLevel = (
+  userXp: number
+): { level: number; seconds_for_next_chest_opening: number } => {
+  // Check if the level is cached and not expired
+  const cached = userLevelsCache[userXp];
+  if (cached && cached.expiry > Date.now()) {
+    return {
+      level: cached.level,
+      seconds_for_next_chest_opening: cached.seconds_for_next_chest_opening,
+    }; // Return cached level and chest opening seconds
+  }
+
+  // If not cached, calculate the level
+  const { level, seconds_for_next_chest_opening } = calculateUserLevel(userXp);
+
+  // Cache the level for 30 seconds
+  userLevelsCache[userXp] = {
+    level,
+    seconds_for_next_chest_opening,
+    expiry: Date.now() + 30000, // Cache expires in 30 seconds
+  };
+
+  return { level, seconds_for_next_chest_opening };
+};
+
+const calculateUserLevel = (
+  userXp: number
+): { level: number; seconds_for_next_chest_opening: number } => {
+  let userLevel = 1;
+  let secondsForNextChest = 0;
+
+  for (const level of levelsCache) {
+    if (userXp >= level.xp_required) {
+      userLevel = level.level;
+      secondsForNextChest = level.seconds_for_next_chest_opening;
+    } else {
+      break;
+    }
+  }
+
+  return {
+    level: userLevel,
+    seconds_for_next_chest_opening: secondsForNextChest,
+  };
+};
