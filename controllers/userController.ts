@@ -14,6 +14,38 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+// Create a New User
+export const createUser = async (req: Request, res: Response) => {
+  const { telegram_id, username, wallet_address, IP_address, referred_by } =
+    req.body;
+
+  try {
+    // Check if the user already exists
+    const existingUser = await User.findOne({ telegram_id });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    // Create a new user
+    const newUser = new User({
+      telegram_id,
+      username,
+      wallet_address,
+      IP_address,
+      referred_by: referred_by || null, // Ensure this is null if not provided
+    });
+
+    await newUser.save();
+    res.status(201).json({
+      message: "User created successfully",
+      user: newUser,
+    });
+  } catch (error: any) {
+    console.log(error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // Get User Info
 export const getUserInfo = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;

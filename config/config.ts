@@ -2,14 +2,14 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const PORT = process.env.PORT || 5000;
+export const PORT = process.env.PORT || 80;
 export const MONGO_URI =
   process.env.MONGO_URI || "mongodb://localhost:27017/telegram_game";
 export const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 export const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 
 export const STAKING_APP_URL = "t.me/CataStakingBot/catacomb";
-export const WEBSITE_URL = "https://catacomb.fyi";
+export const WEBSITE_URL = "https://t.me/catatTestbot/CATAFRONTTEST";
 export const TG_URL = "https://t.me/catacombTON";
 export const ANNOUNCEMENTS_URL = "https://t.me/catacombTON";
 export const TWITTER_URL = "https://x.com/catacombTON";

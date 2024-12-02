@@ -14,7 +14,7 @@ import Admin from "./models/adminModel";
 import Task from "./models/taskModel";
 import stakingRoutes from "./routes/stakingRoutes";
 import { PORT } from "./config/config";
-// import { bot } from "./utils/telegramBot";
+import { bot } from "./utils/telegramBot";
 import { handleMenu } from "./bot/handlers";
 declare module "cors";
 dotenv.config();
@@ -221,7 +221,7 @@ seedInitialData();
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/task", taskRoutes);
+app.use("/api/tasks", taskRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/levels", levelRoutes);
 app.use("/api/staking", stakingRoutes);
@@ -229,4 +229,4 @@ app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
-// bot.onText(/\/start/, handleMenu);
+bot.onText(/\/start/, handleMenu);

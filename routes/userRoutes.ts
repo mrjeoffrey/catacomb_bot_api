@@ -5,12 +5,14 @@ import {
   openChest,
   refer,
   getUsers,
+  createUser,
 } from "../controllers/userController";
 
 const router = express.Router();
 
 router.get("/", getUsers);
-router.get("/info", getUserInfo);
+router.post("/", createUser);
+router.post("/info", getUserInfo);
 router.post("/complete-task", completeTask);
 router.post("/open-chest", openChest);
 router.post("/refer", refer);
