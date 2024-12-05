@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import crypto from "crypto";
+
 import connectDB from "./utils/database";
 import adminRoutes from "./routes/adminRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -17,6 +19,7 @@ import { PORT } from "./config/config";
 import { bot } from "./utils/telegramBot";
 import { handleMenu } from "./bot/handlers";
 import { loadLevelsInMemory } from "./controllers/levelController";
+
 declare module "cors";
 dotenv.config();
 
@@ -160,6 +163,7 @@ const seedInitialData = async () => {
         wallet_address: `0x${Math.random().toString(36).substring(2, 15)}`,
         IP_address: `192.168.1.${i + 1}`, // Unique IP address
         referred_by: null, // Set initially to null
+        referral_code: crypto.randomBytes(6).toString("hex"),
         task_done:
           Math.random() > 0.5 // 50% chance of having tasks done
             ? Array.from(
