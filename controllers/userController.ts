@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import User from "../models/userModel";
+import User, { IUser } from "../models/userModel";
 import { getUserLevel } from "./levelController";
+import crypto from "crypto";
 
 // Get All Users
 export const getUsers = async (req: Request, res: Response) => {
@@ -15,9 +16,8 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
-//
 export const createUser = async (req: Request, res: Response) => {
-  const { telegram_id, username, wallet_address, IP_address, referred_by } =
+  const { telegram_id, username, wallet_address, IP_address, referral_code } =
     req.body;
 
   try {
@@ -26,21 +26,34 @@ export const createUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    let referrer: IUser | null = null;
+
+    if (referral_code) {
+      referrer = await User.findOne({ referral_code });
+      if (!referrer) {
+        console.warn(`Referral code ${referral_code} does not exist.`);
+      }
+    }
+
+    const newReferralCode = crypto.randomBytes(6).toString("hex");
+
     const newUser = new User({
       telegram_id,
       username,
       wallet_address,
       IP_address,
-      referred_by: referred_by || null,
+      referral_code: newReferralCode,
+      referred_by: referrer ? referrer._id : null,
     });
 
     await newUser.save();
+
     res.status(201).json({
       message: "User created successfully",
       user: newUser,
     });
   } catch (error: any) {
-    console.log(error.message);
+    console.error(error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -103,7 +116,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
       (sum, entry) => sum + entry.gold,
       0
     );
-    const { level, seconds_for_next_chest_opening } = getUserLevel(seasonXP);
+    const { level, seconds_for_next_chest_opening } = getUserLevel(user.xp);
     // Calculate the remaining time until the next chest opening
     const remainingSeconds = calculateChestOpeningTime(
       user,
@@ -235,6 +248,31 @@ export const openChest = async (req: Request, res: Response) => {
     });
 
     await user.save();
+
+    // Handle referral logic
+    if (user.referred_by) {
+      const referrer = await User.findById(user.referred_by);
+      if (referrer) {
+        // Check if the referred user is already a valid referral
+        const isAlreadyValidReferral = referrer.valid_referrals.includes(
+          user._id
+        );
+
+        if (!isAlreadyValidReferral) {
+          if (user.gold > 0) {
+            referrer.valid_referrals.push(user._id);
+            referrer.xp += 100; // Reward referrer with 100 XP for valid referral
+          }
+        }
+        const referralGoldReward = Math.floor(
+          (settings.referral_earning.gold_percentage / 100) * gold_reward
+        );
+        referrer.gold += referralGoldReward;
+        referrer.xp += settings.referral_earning.xp;
+
+        await referrer.save();
+      }
+    }
 
     res.json({
       message: "Chest opened",

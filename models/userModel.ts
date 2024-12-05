@@ -1,28 +1,28 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
-// Define IUser interface
 export interface IUser extends Document {
   telegram_id: number;
   username: string;
   gold: number;
   xp: number;
   wallet_address: string;
-  task_done: Types.ObjectId[]; // Reference Task IDs
+  task_done: Types.ObjectId[];
   chest_opened_history: { time_opened: Date; xp: number; gold: number }[];
   IP_address: string;
-  referred_by: Types.ObjectId | null; // Reference User ID
+  referral_code: string;
+  referred_by: Types.ObjectId | null;
+  valid_referrals: Types.ObjectId[];
   blocked: boolean;
   created_at: Date;
 }
 
-// Define the User schema
 const userSchema: Schema = new Schema({
   telegram_id: { type: Number, required: true, unique: true },
   username: { type: String, required: true },
   gold: { type: Number, default: 0 },
   xp: { type: Number, default: 0 },
   wallet_address: { type: String },
-  task_done: { type: [Types.ObjectId], ref: "Task", default: [] }, // Array of Task references
+  task_done: { type: [Types.ObjectId], ref: "Task", default: [] },
   chest_opened_history: [
     {
       time_opened: { type: Date, default: Date.now },
@@ -31,7 +31,9 @@ const userSchema: Schema = new Schema({
     },
   ],
   IP_address: { type: String },
-  referred_by: { type: Types.ObjectId, ref: "User", default: null }, // Reference another User
+  referral_code: { type: String, unique: true, required: true },
+  referred_by: { type: Types.ObjectId, ref: "User", default: null },
+  valid_referrals: { type: [Types.ObjectId], ref: "User", default: [] },
   blocked: { type: Boolean, default: false },
   created_at: { type: Date, default: Date.now },
 });
