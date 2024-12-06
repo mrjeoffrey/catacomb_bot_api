@@ -16,7 +16,7 @@ const router = express.Router();
 router.post("/register", registerAdmin);
 router.post("/login", loginAdmin);
 router.post("/block-user", authenticateToken, blockUser);
-router.post("/remove-user", authenticateToken, removeUser);
+router.post("/remove-user", removeUser);
 router.put("/edit-task", authenticateToken, editTask);
 router.put("/update-settings", authenticateToken, updateSettings);
 router.post("/insert-level", authenticateToken, insertLevel);
