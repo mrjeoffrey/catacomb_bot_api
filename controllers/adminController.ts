@@ -47,7 +47,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
 
 // Remove User by ID
 export const removeUser = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.body;
 
   try {
     const deletedUser = await User.findByIdAndDelete(id);
