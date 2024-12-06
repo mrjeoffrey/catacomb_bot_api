@@ -265,8 +265,8 @@ export const openChest = async (req: Request, res: Response) => {
       const referrer = await User.findById(user.referred_by);
       if (referrer) {
         // Check if the referred user is already a valid referral
-        const isAlreadyValidReferral = referrer.valid_referrals.includes(
-          user._id
+        const isAlreadyValidReferral = referrer.valid_referrals.some(
+          (referral) => referral.id.equals(user._id)
         );
 
         if (!isAlreadyValidReferral) {
