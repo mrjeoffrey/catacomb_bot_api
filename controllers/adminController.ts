@@ -45,6 +45,26 @@ export const loginAdmin = async (req: Request, res: Response) => {
   }
 };
 
+// Remove User by ID
+export const removeUser = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const deletedUser = await User.findByIdAndDelete(id);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "User removed successfully" });
+  } catch (error: any) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: error?.message || "Failed to delete User" });
+  }
+};
+
 // Block User
 export const blockUser = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;

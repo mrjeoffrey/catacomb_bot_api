@@ -6,11 +6,14 @@ import crypto from "crypto";
 // Get All Users
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const user = await User.find();
-    if (!user) {
+    const users = await User.find().populate({
+      path: "referred_by",
+      select: "username _id telegram_id",
+    });
+    if (!users) {
       return res.status(404).json({ message: "Users not found" });
     }
-    res.json(user);
+    res.json(users);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
