@@ -115,21 +115,31 @@ export const getUserInfo = async (req: Request, res: Response) => {
       (sum, entry) => sum + entry.xp,
       0
     );
+
     const seasonGold = chestOpenedThisSeason.reduce(
       (sum, entry) => sum + entry.gold,
       0
     );
+
+    // Calculate valid referrals validated this month
+    const validReferralsThisMonth = user.valid_referrals.filter(
+      (referral) => referral.time_added >= startOfMonth
+    );
+
+    const additionalXP = validReferralsThisMonth.length * 100;
+
+    // Total season XP including referral XP
+    const totalSeasonXP = seasonXP + additionalXP;
+
+    // Calculate user level and chest opening time
     const { level, seconds_for_next_chest_opening } = getUserLevel(user.xp);
-    // Calculate the remaining time until the next chest opening
     const remainingSeconds = calculateChestOpeningTime(
       user,
       seconds_for_next_chest_opening
     );
     // Aggregate rankings for active users
     const rankings = await User.aggregate([
-      // Step 1: Filter active users (not blocked)
       { $match: { blocked: false } },
-      // Step 2: Calculate season gold and XP for each user
       {
         $project: {
           username: 1,
@@ -166,21 +176,19 @@ export const getUserInfo = async (req: Request, res: Response) => {
           },
         },
       },
-      // Step 3: Sort first by season gold in descending order, then by season XP in descending order
       { $sort: { season_gold: -1, season_xp: -1 } },
     ]);
 
-    // Find the user's rank
     const userRank =
       rankings.findIndex((r) => r.telegram_id === telegram_id) + 1;
 
     // Convert the Mongoose document to a plain JavaScript object
     const userPlainObject = user.toObject();
 
-    // Add the season_xp, season_gold, and rank properties
+    // Add the season_xp, season_gold, totalSeasonXP, and rank properties
     const userInfo = {
       ...userPlainObject,
-      season_xp: seasonXP,
+      season_xp: totalSeasonXP,
       season_gold: seasonGold,
       level: level,
       seconds: seconds_for_next_chest_opening,
@@ -263,7 +271,10 @@ export const openChest = async (req: Request, res: Response) => {
 
         if (!isAlreadyValidReferral) {
           if (user.gold > 0) {
-            referrer.valid_referrals.push(user._id);
+            referrer.valid_referrals.push({
+              id: user._id,
+              time_added: new Date(),
+            });
             referrer.xp += 100; // Reward referrer with 100 XP for valid referral
           }
         }
@@ -284,32 +295,6 @@ export const openChest = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Referral Program
-export const refer = async (req: Request, res: Response) => {
-  const { telegram_id, referral_code } = req.body;
-
-  try {
-    const user = await User.findOne({ telegram_id });
-    const referrer = await User.findOne({ username: referral_code });
-
-    if (!user || !referrer) {
-      return res.status(404).json({ message: "User or referrer not found" });
-    }
-
-    // Logic to apply referral earnings
-    user.referred_by = referral_code;
-    user.gold += 100; // Referral bonus example
-    await user.save();
-
-    referrer.gold += 10; // Referral bonus for referrer
-    await referrer.save();
-
-    res.json({ message: "Referral successful", referral_earnings: 10 });
-  } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };

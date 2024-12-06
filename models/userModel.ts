@@ -11,7 +11,7 @@ export interface IUser extends Document {
   IP_address: string;
   referral_code: string;
   referred_by: Types.ObjectId | null;
-  valid_referrals: Types.ObjectId[];
+  valid_referrals: { id: Types.ObjectId; time_added: Date }[];
   blocked: boolean;
   created_at: Date;
 }
@@ -33,7 +33,12 @@ const userSchema: Schema = new Schema({
   IP_address: { type: String },
   referral_code: { type: String, unique: true, required: true },
   referred_by: { type: Types.ObjectId, ref: "User", default: null },
-  valid_referrals: { type: [Types.ObjectId], ref: "User", default: [] },
+  valid_referrals: [
+    {
+      id: { type: Types.ObjectId, ref: "User", required: true },
+      time_added: { type: Date, default: Date.now },
+    },
+  ],
   blocked: { type: Boolean, default: false },
   created_at: { type: Date, default: Date.now },
 });
