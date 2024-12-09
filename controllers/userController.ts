@@ -157,13 +157,15 @@ export const getUserInfo = async (req: Request, res: Response) => {
       )
       .slice(0, 5)
       .map((referral) => {
-        const referralData = referral.id as any;
-        return {
-          id: referralData.id,
-          telegram_id: referralData.telegram_id,
-          username: referralData.username,
-          time_added: referral.time_added,
-        };
+        if (referral.id) {
+          const referralData = referral.id as any;
+          return {
+            id: referralData.id,
+            telegram_id: referralData.telegram_id,
+            username: referralData.username,
+            time_added: referral.time_added,
+          };
+        }
       });
     // Aggregate rankings for active users
     const rankings = await User.aggregate([
