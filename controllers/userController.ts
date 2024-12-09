@@ -102,12 +102,11 @@ export const getUserInfo = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;
 
   try {
-    const user = await User.findOne({ telegram_id })
-      .populate({
-        path: "valid_referrals.id",
-        select: "telegram_id username",
-      })
-      .lean();
+    const user = await User.findOne({ telegram_id }).populate({
+      path: "valid_referrals.id",
+      select: "telegram_id username _id",
+    });
+    console.log(user, "USER fetching by telegram Id");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -160,6 +159,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
       .map((referral) => {
         const referralData = referral.id as any;
         return {
+          id: referralData.id,
           telegram_id: referralData.telegram_id,
           username: referralData.username,
           time_added: referral.time_added,
