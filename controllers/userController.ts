@@ -128,7 +128,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
       0
     );
 
-    // Calculate valid referrals validated this month
+    // Calculate valid referrals this month
     const validReferralsThisMonth = user.valid_referrals.filter(
       (referral) => referral.time_added >= startOfMonth
     );
@@ -144,6 +144,32 @@ export const getUserInfo = async (req: Request, res: Response) => {
       user,
       seconds_for_next_chest_opening
     );
+
+    // Fetch the first 5 valid referrals with additional user info
+    const validReferrals = await User.aggregate([
+      { $match: { _id: { $in: user.valid_referrals.map((ref) => ref.id) } } },
+      {
+        $project: {
+          telegram_id: 1,
+          username: 1,
+          time_added: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: "$valid_referrals",
+                  as: "referral",
+                  cond: { $eq: ["$$referral.id", "$_id"] },
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+      { $sort: { "time_added.time_added": -1 } },
+      { $limit: 5 },
+    ]);
+
     // Aggregate rankings for active users
     const rankings = await User.aggregate([
       { $match: { blocked: false } },
@@ -192,7 +218,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
     // Convert the Mongoose document to a plain JavaScript object
     const userPlainObject = user.toObject();
 
-    // Add the season_xp, season_gold, totalSeasonXP, and rank properties
+    // Add the season_xp, season_gold, totalSeasonXP, rank, and valid referrals
     const userInfo = {
       ...userPlainObject,
       season_xp: totalSeasonXP,
@@ -201,6 +227,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
       seconds: seconds_for_next_chest_opening,
       remainingSeconds: remainingSeconds,
       rank: userRank,
+      valid_referrals: validReferrals,
     };
 
     res.json(userInfo);
