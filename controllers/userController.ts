@@ -160,7 +160,6 @@ export const getUserInfo = async (req: Request, res: Response) => {
       .map((referral) => {
         const referralData = referral.id as any;
         return {
-          id: referralData.id,
           telegram_id: referralData.telegram_id,
           username: referralData.username,
           time_added: referral.time_added,
