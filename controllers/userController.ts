@@ -151,6 +151,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
 
     // Fetch the first 5 valid referrals with additional user info
     const validReferrals = user.valid_referrals
+      .filter((referral) => referral.id)
       .sort(
         (a, b) =>
           new Date(b.time_added).getTime() - new Date(a.time_added).getTime()
