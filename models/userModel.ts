@@ -9,6 +9,7 @@ export interface IUser extends Document {
   task_done: Types.ObjectId[];
   chest_opened_history: { time_opened: Date; xp: number; gold: number }[];
   IP_address: string;
+  location: string;
   referral_code: string;
   referred_by: Types.ObjectId | null;
   valid_referrals: { id: Types.ObjectId; time_added: Date }[];
@@ -31,6 +32,7 @@ const userSchema: Schema = new Schema({
     },
   ],
   IP_address: { type: String },
+  location: { type: String },
   referral_code: { type: String, unique: true, required: true },
   referred_by: { type: Types.ObjectId, ref: "User", default: null },
   valid_referrals: [

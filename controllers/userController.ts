@@ -20,8 +20,14 @@ export const getUsers = async (req: Request, res: Response) => {
 };
 
 export const createUser = async (req: Request, res: Response) => {
-  const { telegram_id, username, wallet_address, IP_address, referral_code } =
-    req.body;
+  const {
+    telegram_id,
+    username,
+    wallet_address,
+    IP_address,
+    referral_code,
+    location,
+  } = req.body;
 
   try {
     const existingUser = await User.findOne({ telegram_id });
@@ -45,6 +51,7 @@ export const createUser = async (req: Request, res: Response) => {
       username,
       wallet_address,
       IP_address,
+      location,
       referral_code: newReferralCode,
       referred_by: referrer ? referrer._id : null,
     });
