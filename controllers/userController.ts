@@ -152,18 +152,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
         $project: {
           telegram_id: 1,
           username: 1,
-          time_added: {
-            $arrayElemAt: [
-              {
-                $filter: {
-                  input: "$valid_referrals",
-                  as: "referral",
-                  cond: { $eq: ["$$referral.id", "$_id"] },
-                },
-              },
-              0,
-            ],
-          },
+          time_added: 1,
         },
       },
       { $sort: { "time_added.time_added": -1 } },
