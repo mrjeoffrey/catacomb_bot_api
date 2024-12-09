@@ -102,7 +102,12 @@ export const getUserInfo = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;
 
   try {
-    const user = await User.findOne({ telegram_id });
+    const user = await User.findOne({ telegram_id })
+      .populate({
+        path: "valid_referrals.id",
+        select: "telegram_id username",
+      })
+      .lean();
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -146,19 +151,21 @@ export const getUserInfo = async (req: Request, res: Response) => {
     );
 
     // Fetch the first 5 valid referrals with additional user info
-    const validReferrals = await User.aggregate([
-      { $match: { _id: { $in: user.valid_referrals.map((ref) => ref.id) } } },
-      {
-        $project: {
-          telegram_id: 1,
-          username: 1,
-          time_added: 1,
-        },
-      },
-      { $sort: { "time_added.time_added": -1 } },
-      { $limit: 5 },
-    ]);
-
+    const validReferrals = user.valid_referrals
+      .sort(
+        (a, b) =>
+          new Date(b.time_added).getTime() - new Date(a.time_added).getTime()
+      )
+      .slice(0, 5)
+      .map((referral) => {
+        const referralData = referral.id as any;
+        return {
+          id: referralData._id,
+          telegram_id: referralData.telegram_id,
+          username: referralData.username,
+          time_added: referral.time_added,
+        };
+      });
     // Aggregate rankings for active users
     const rankings = await User.aggregate([
       { $match: { blocked: false } },
