@@ -54,12 +54,22 @@ export const getAllTasks = async (req: Request, res: Response) => {
 
 export const createTask = async (req: Request, res: Response) => {
   console.log("_____________1111");
-  const { name, gold_reward, xp_reward } = req.body;
+  const { name, gold_reward, xp_reward, description } = req.body;
   console.log("22222222");
   const avatar_url = req.file ? `/images/${req.file.filename}` : "";
-  console.log("3333333333333");
+  console.log(
+    req.file ? `/images/${req.file.filename}` : "",
+    "3333333333333",
+    avatar_url
+  );
   try {
-    const task = new Task({ name, gold_reward, xp_reward, avatar_url });
+    const task = new Task({
+      name,
+      gold_reward,
+      xp_reward,
+      avatar_url,
+      description,
+    });
     console.log("4444444444");
     await task.save();
     res.json({ message: "Task created successfully" });
