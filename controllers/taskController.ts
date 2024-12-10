@@ -53,15 +53,20 @@ export const getAllTasks = async (req: Request, res: Response) => {
 };
 
 export const createTask = async (req: Request, res: Response) => {
+  console.log("_____________1111");
   const { name, gold_reward, xp_reward } = req.body;
+  console.log("22222222");
   const avatar_url = req.file ? `/images/${req.file.filename}` : "";
-
+  console.log("3333333333333");
   try {
     const task = new Task({ name, gold_reward, xp_reward, avatar_url });
+    console.log("4444444444");
     await task.save();
     res.json({ message: "Task created successfully" });
+    console.log("5555555555555");
   } catch (error: any) {
     console.error(error);
+    console.log("66666666666");
     if (error.name === "ValidationError") {
       return res.status(400).json({
         message: "Validation error",
