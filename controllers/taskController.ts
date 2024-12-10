@@ -41,7 +41,11 @@ const fileFilter = (
   cb(null, true);
 };
 
-const upload = multer({ storage, fileFilter });
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 50 * 1024 * 1024 },
+});
 
 export const getAllTasks = async (req: Request, res: Response) => {
   try {
