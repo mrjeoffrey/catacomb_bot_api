@@ -9,8 +9,8 @@ import {
 
 const router = express.Router();
 router.get("/", getAllTasks);
-router.put("/", uploadAvatar, createTask);
-router.put("/:id", uploadAvatar, updateTask);
+router.post("/", uploadAvatar, createTask);
+router.post("/:id", uploadAvatar, updateTask);
 router.get("/:id", removeTask);
 
 export default router;
