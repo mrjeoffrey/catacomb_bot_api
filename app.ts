@@ -1,7 +1,9 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import crypto from "crypto";
+const bodyParser = require("body-parser");
+// import crypto from "crypto";
+import path from "path";
 
 import connectDB from "./utils/database";
 import adminRoutes from "./routes/adminRoutes";
@@ -11,15 +13,14 @@ import settingsRoutes from "./routes/settingsRoutes";
 import levelRoutes from "./routes/levelRoutes";
 import Level from "./models/levelModel";
 import Settings from "./models/settingsModel";
-import User from "./models/userModel";
+// import User from "./models/userModel";
 import Admin from "./models/adminModel";
-import Task from "./models/taskModel";
+// import Task from "./models/taskModel";
 import stakingRoutes from "./routes/stakingRoutes";
 import { PORT } from "./config/config";
-import { bot } from "./utils/telegramBot";
-import { handleMenu } from "./bot/handlers";
+// import { bot } from "./utils/telegramBot";
+// import { handleMenu } from "./bot/handlers";
 import { loadLevelsInMemory } from "./controllers/levelController";
-import path from "path";
 
 declare module "cors";
 dotenv.config();
@@ -31,6 +32,8 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 // Middleware
 app.use(express.json());
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
 // Connect to Database
 connectDB();
