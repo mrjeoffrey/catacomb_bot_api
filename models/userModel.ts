@@ -6,7 +6,13 @@ export interface IUser extends Document {
   gold: number;
   xp: number;
   wallet_address: string;
-  task_done: Types.ObjectId[];
+  task_done: {
+    task_id: Types.ObjectId;
+    completed_date: Date;
+    proof_img: string;
+    proof_url: string;
+    validated: boolean;
+  }[];
   chest_opened_history: { time_opened: Date; xp: number; gold: number }[];
   IP_address: string;
   location: string;
@@ -23,7 +29,15 @@ const userSchema: Schema = new Schema({
   gold: { type: Number, default: 0 },
   xp: { type: Number, default: 0 },
   wallet_address: { type: String },
-  task_done: { type: [Types.ObjectId], ref: "Task", default: [] },
+  task_done: [
+    {
+      task_id: { type: Types.ObjectId, ref: "Task", required: true },
+      completed_date: { type: Date, default: Date.now },
+      proof_img: { type: String },
+      proof_url: { type: String },
+      validated: { type: Boolean, default: false },
+    },
+  ],
   chest_opened_history: [
     {
       time_opened: { type: Date, default: Date.now },

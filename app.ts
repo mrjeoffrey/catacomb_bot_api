@@ -19,6 +19,7 @@ import { PORT } from "./config/config";
 import { bot } from "./utils/telegramBot";
 import { handleMenu } from "./bot/handlers";
 import { loadLevelsInMemory } from "./controllers/levelController";
+import path from "path";
 
 declare module "cors";
 dotenv.config();
@@ -27,7 +28,7 @@ const app = express();
 
 // Enable CORS
 app.use(cors());
-
+app.use(express.static(path.join(__dirname, "public")));
 // Middleware
 app.use(express.json());
 

@@ -4,17 +4,13 @@ import {
   getAllTasks,
   removeTask,
   updateTask,
+  uploadAvatar,
 } from "../controllers/taskController";
 
 const router = express.Router();
-
 router.get("/", getAllTasks);
-router.put("/create", createTask);
-router.put("/:id", updateTask);
-router.get("/:id", removeTask);
-// Get Task by ID
-// router.get('/tasks/:id', getTaskById);
-
-module.exports = router;
+router.post("/", uploadAvatar, createTask);
+router.put("/:id", uploadAvatar, updateTask);
+router.delete("/:id", removeTask);
 
 export default router;
