@@ -68,7 +68,7 @@ export const getAllTasks = async (req: Request, res: Response) => {
 };
 
 export const createTask = async (req: Request, res: Response) => {
-  const { name, gold_reward, xp_reward, description, avatar_url } = req.body;
+  const { name, gold_reward, xp_reward, link, avatar_url } = req.body;
   let savedFilePath = "";
   if (avatar_url) {
     try {
@@ -102,7 +102,7 @@ export const createTask = async (req: Request, res: Response) => {
       gold_reward,
       xp_reward,
       avatar_url: savedFilePath,
-      description,
+      link,
     });
     await task.save();
     res.json({ message: "Task created successfully", task });

@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface ITask extends Document {
   name: string;
-  description: string;
+  link: string;
   avatar_url: string;
   gold_reward: number;
   xp_reward: number;
@@ -10,7 +10,7 @@ export interface ITask extends Document {
 
 const taskSchema: Schema = new Schema({
   name: { type: String, required: true },
-  description: { type: String },
+  link: { type: String },
   avatar_url: { type: String },
   gold_reward: { type: Number, required: true, min: 200, max: 500 },
   xp_reward: { type: Number, required: true, default: 400 },
