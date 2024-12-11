@@ -4,7 +4,10 @@ import path from "path";
 import fs from "fs";
 import mime from "mime-types";
 import Task from "../models/taskModel";
+import Settings from "../models/settingsModel";
 import { decodeBase64Image } from "../utils/decodeBase64Image";
+import User, { IUser } from "../models/userModel";
+import mongoose from "mongoose";
 
 const ensureImagesFolderExists = () => {
   const imagesFolderPath = path.join(__dirname, "../public/images");
@@ -119,6 +122,134 @@ export const createTask = async (req: Request, res: Response) => {
   }
 };
 
+//Task Proof
+export const taskProofingOrder = async (req: Request, res: Response) => {
+  const { telegram_id, task_id, image, url } = req.body;
+  let savedFilePath = "";
+  if (image) {
+    try {
+      const fileData = decodeBase64Image(image);
+      const mimeType = fileData.type; // Extract MIME type from the decoded image
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "image/svg+xml",
+      ];
+
+      if (!allowedTypes.includes(mimeType)) {
+        return res.status(400).json({ message: "Unsupported image type" });
+      }
+      const fileExtension = mime.extension(mimeType);
+      const uniqueFileName = `image-${Date.now()}.${fileExtension}`;
+      const filePath = path.join(__dirname, "../public/images", uniqueFileName);
+
+      fs.writeFileSync(filePath, fileData.data);
+      savedFilePath = `/images/${uniqueFileName}`;
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid image format" });
+    }
+  }
+
+  try {
+    const user = await User.findOne({ telegram_id });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const task = await Task.findById(task_id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    user.task_done.push({
+      task_id: task_id,
+      proof_img: savedFilePath,
+      completed_date: new Date(),
+      proof_url: url,
+      validated: false,
+    });
+
+    await user.save();
+
+    res.json({
+      message:
+        "Your task is currently under review by the admin, along with your proof data.",
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Complete Task
+export const validateTask = async (req: Request, res: Response) => {
+  const { telegram_id, task_id } = req.body;
+  try {
+    const user = await User.findOne({ telegram_id });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const task = await Task.findById(task_id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        telegram_id,
+        "task_done.task_id": new mongoose.Types.ObjectId(task_id),
+      },
+      {
+        $set: { "task_done.$.validated": true },
+      },
+      {
+        new: true,
+      }
+    );
+
+    user.gold += task.gold_reward;
+    user.xp += task.xp_reward;
+
+    // Handle referral logic
+    if (user.referred_by) {
+      const settings = await Settings.findOne();
+      if (!settings) {
+        return res.status(500).json({ message: "Settings not found" });
+      }
+      const referrer = await User.findById(user.referred_by);
+      if (referrer) {
+        const isAlreadyValidReferral = referrer.valid_referrals.some(
+          (referral) => referral.id.equals(user._id)
+        );
+        console.log(user, "validating user");
+        if (!isAlreadyValidReferral) {
+          if (user.gold > 0) {
+            referrer.valid_referrals.push({
+              id: user._id,
+              time_added: new Date(),
+            });
+            referrer.xp += 100;
+          }
+        }
+        const referralGoldReward = Math.floor(
+          (settings.referral_earning.gold_percentage / 100) * task.gold_reward
+        );
+        referrer.gold += referralGoldReward;
+        referrer.xp += settings.referral_earning.xp;
+        console.log(referrer, "referrer");
+        await referrer.save();
+      }
+    }
+
+    await user.save();
+
+    res.json({
+      message: "The task validation has been completed.",
+      updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const updateTask = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, gold_reward, xp_reward, link } = req.body;
@@ -175,3 +306,4 @@ export const removeTask = async (req: Request, res: Response) => {
 };
 
 export const uploadAvatar = upload.single("avatar_url");
+export const uploadImage = upload.single("image");

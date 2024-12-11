@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import User, { IUser } from "../models/userModel";
+import Settings from "../models/settingsModel";
 import { getUserLevel } from "./levelController";
 import crypto from "crypto";
 
@@ -235,34 +236,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
   }
 };
 
-// Complete Task
-export const completeTask = async (req: Request, res: Response) => {
-  const { telegram_id, task_id } = req.body;
-
-  try {
-    const user = await User.findOne({ telegram_id });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Logic to complete the task, add rewards, etc.
-    user.task_done.push(task_id);
-    user.gold += 300; // Example reward
-    user.xp += 400; // Example reward
-    await user.save();
-
-    res.json({
-      message: "Task completed successfully",
-      gold_reward: 300,
-      xp_reward: 400,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
 // Open Chest
-import Settings from "../models/settingsModel"; // Import the Settings model
 
 export const openChest = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;
