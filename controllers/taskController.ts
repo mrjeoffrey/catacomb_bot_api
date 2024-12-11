@@ -158,6 +158,16 @@ export const removeTask = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Task not found" });
     }
 
+    if (task.avatar_url) {
+      const filePath = path.join(__dirname, "../public", task.avatar_url);
+
+      // Check if the file exists and delete it
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Image file ${filePath} has been removed successfully.`);
+      }
+    }
+
     res.json({ message: "Task removed successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
