@@ -3,6 +3,7 @@ import multer, { MulterError } from "multer";
 import path from "path";
 import fs from "fs";
 import Task from "../models/taskModel";
+import { decodeBase64Image } from "../utils/decodeBase64Image";
 
 const ensureImagesFolderExists = () => {
   const imagesFolderPath = path.join(__dirname, "../public/images");
@@ -15,14 +16,15 @@ const ensureImagesFolderExists = () => {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     ensureImagesFolderExists();
+
     cb(null, "public/images");
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-    );
+    const finalFileName =
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname);
+
+    cb(null, finalFileName);
   },
 });
 
@@ -57,30 +59,34 @@ export const getAllTasks = async (req: Request, res: Response) => {
 };
 
 export const createTask = async (req: Request, res: Response) => {
-  console.log("_____________1111");
-  const { name, gold_reward, xp_reward, description } = req.body;
-  console.log("22222222");
-  const avatar_url = req.file ? `/images/${req.file.filename}` : "";
-  console.log(
-    req.file ? `/images/${req.file.filename}` : "",
-    "3333333333333",
-    avatar_url
-  );
+  const { name, gold_reward, xp_reward, description, avatar_url } = req.body;
+  let savedFilePath = "";
+  if (avatar_url) {
+    try {
+      const fileData = decodeBase64Image(avatar_url);
+      const uniqueFileName = `avatar-${Date.now()}.png`;
+      const filePath = path.join(__dirname, "../public/images", uniqueFileName);
+
+      fs.writeFileSync(filePath, fileData.data);
+      savedFilePath = `/images/${uniqueFileName}`;
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid image format" });
+    }
+  }
+
   try {
     const task = new Task({
       name,
       gold_reward,
       xp_reward,
-      avatar_url,
+      avatar_url: savedFilePath,
       description,
     });
-    console.log("4444444444");
     await task.save();
-    res.json({ message: "Task created successfully" });
-    console.log("5555555555555");
+    res.json({ message: "Task created successfully", task });
   } catch (error: any) {
     console.error(error);
-    console.log("66666666666");
+
     if (error.name === "ValidationError") {
       return res.status(400).json({
         message: "Validation error",
@@ -136,4 +142,4 @@ export const removeTask = async (req: Request, res: Response) => {
   }
 };
 
-export const uploadAvatar = upload.single("avatar");
+export const uploadAvatar = upload.single("avatar_url");
