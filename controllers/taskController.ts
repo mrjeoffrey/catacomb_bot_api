@@ -33,7 +33,15 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
-  const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/bmp",
+    "image/svg+xml",
+    "image/tiff",
+  ];
 
   if (!allowedTypes.includes(file.mimetype)) {
     const error = new Error("Invalid file type");
