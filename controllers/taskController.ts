@@ -121,13 +121,13 @@ export const createTask = async (req: Request, res: Response) => {
 
 export const updateTask = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, gold_reward, xp_reward } = req.body;
+  const { name, gold_reward, xp_reward, link } = req.body;
   const avatar_url = req.file ? `/images/${req.file.filename}` : undefined;
 
   try {
     const task = await Task.findByIdAndUpdate(
       id,
-      { name, gold_reward, xp_reward, avatar_url },
+      { name, gold_reward, xp_reward, avatar_url, link },
       { new: true, runValidators: true }
     );
 
