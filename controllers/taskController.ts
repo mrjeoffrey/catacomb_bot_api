@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import multer, { MulterError } from "multer";
 import path from "path";
 import fs from "fs";
+import mime from "mime-types";
 import Task from "../models/taskModel";
 import { decodeBase64Image } from "../utils/decodeBase64Image";
 
@@ -72,7 +73,20 @@ export const createTask = async (req: Request, res: Response) => {
   if (avatar_url) {
     try {
       const fileData = decodeBase64Image(avatar_url);
-      const uniqueFileName = `avatar-${Date.now()}.png`;
+      const mimeType = fileData.type; // Extract MIME type from the decoded image
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "image/svg+xml",
+      ];
+
+      if (!allowedTypes.includes(mimeType)) {
+        return res.status(400).json({ message: "Unsupported image type" });
+      }
+      const fileExtension = mime.extension(mimeType);
+      const uniqueFileName = `avatar-${Date.now()}.${fileExtension}`;
       const filePath = path.join(__dirname, "../public/images", uniqueFileName);
 
       fs.writeFileSync(filePath, fileData.data);
