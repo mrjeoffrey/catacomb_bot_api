@@ -20,6 +20,144 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+// Get User Info
+export const getUserById = async (req: Request, res: Response) => {
+  const { id } = req.body;
+
+  try {
+    const user = await User.findById({ id }).populate({
+      path: "valid_referrals.id",
+      select: "telegram_id username _id",
+    });
+    console.log(user, "USER fetching by Id");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const startOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
+
+    // Calculate the user's season XP and gold
+    const chestOpenedThisSeason = user.chest_opened_history.filter(
+      (entry) => entry.time_opened >= startOfMonth
+    );
+
+    const seasonXP = chestOpenedThisSeason.reduce(
+      (sum, entry) => sum + entry.xp,
+      0
+    );
+
+    const seasonGold = chestOpenedThisSeason.reduce(
+      (sum, entry) => sum + entry.gold,
+      0
+    );
+
+    // Calculate valid referrals this month
+    const validReferralsThisMonth = user.valid_referrals.filter(
+      (referral) => referral.time_added >= startOfMonth
+    );
+
+    const additionalXP = validReferralsThisMonth.length * 100;
+
+    // Total season XP including referral XP
+    const totalSeasonXP = seasonXP + additionalXP;
+
+    // Calculate user level and chest opening time
+    const { level, seconds_for_next_chest_opening } = getUserLevel(user.xp);
+    const remainingSeconds = calculateChestOpeningTime(
+      user,
+      seconds_for_next_chest_opening
+    );
+
+    // Fetch the first 5 valid referrals with additional user info
+    const validReferrals = user.valid_referrals
+      .filter((referral) => referral.id)
+      .sort(
+        (a, b) =>
+          new Date(b.time_added).getTime() - new Date(a.time_added).getTime()
+      )
+      .slice(0, 5)
+      .map((referral) => {
+        if (referral.id) {
+          const referralData = referral.id as any;
+          return {
+            id: referralData.id,
+            telegram_id: referralData.telegram_id,
+            username: referralData.username,
+            time_added: referral.time_added,
+          };
+        }
+      });
+    // Aggregate rankings for active users
+    const rankings = await User.aggregate([
+      { $match: { blocked: false } },
+      {
+        $project: {
+          username: 1,
+          telegram_id: 1,
+          season_gold: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$chest_opened_history",
+                    as: "entry",
+                    cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                  },
+                },
+                as: "entry",
+                in: "$$entry.gold",
+              },
+            },
+          },
+          season_xp: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$chest_opened_history",
+                    as: "entry",
+                    cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                  },
+                },
+                as: "entry",
+                in: "$$entry.xp",
+              },
+            },
+          },
+        },
+      },
+      { $sort: { season_gold: -1, season_xp: -1 } },
+    ]);
+
+    const userRank =
+      rankings.findIndex((r) => r.telegram_id === user.telegram_id) + 1;
+
+    // Convert the Mongoose document to a plain JavaScript object
+    const userPlainObject = user.toObject();
+
+    // Add the season_xp, season_gold, totalSeasonXP, rank, and valid referrals
+    const userInfo = {
+      ...userPlainObject,
+      season_xp: totalSeasonXP,
+      season_gold: seasonGold,
+      level: level,
+      seconds: seconds_for_next_chest_opening,
+      remainingSeconds: remainingSeconds,
+      rank: userRank,
+      valid_referrals: validReferrals,
+    };
+
+    res.json(userInfo);
+  } catch (error) {
+    console.error("Error fetching user info with ranking:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const createUser = async (req: Request, res: Response) => {
   const {
     telegram_id,
