@@ -3,6 +3,7 @@ import User, { IUser } from "../models/userModel";
 import Settings from "../models/settingsModel";
 import { getUserLevel } from "./levelController";
 import crypto from "crypto";
+import { isValidObjectId } from "mongoose";
 
 // Get All Users
 export const getUsers = async (req: Request, res: Response) => {
@@ -23,6 +24,10 @@ export const getUsers = async (req: Request, res: Response) => {
 // Get User Info
 export const getUserById = async (req: Request, res: Response) => {
   const { id } = req.body;
+  // Validate the ObjectId
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({ message: "Invalid user ID" });
+  }
 
   try {
     const user = await User.findById(id)
