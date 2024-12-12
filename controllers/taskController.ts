@@ -179,7 +179,7 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
       existingTask.proof_img = savedFilePath;
       existingTask.proof_url = url;
       existingTask.completed_date = new Date();
-      existingTask.validated = false;
+      existingTask.validation_status = "unchecked";
     } else {
       // Add new task if it doesn't exist
       user.task_done.push({
@@ -187,7 +187,7 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
         proof_img: savedFilePath,
         proof_url: url,
         completed_date: new Date(),
-        validated: false,
+        validation_status: "unchecked",
       });
     }
 
@@ -197,6 +197,40 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
     res.json({
       message:
         "Your task is currently under review by the admin, along with your proof data.",
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Checked Task Status by Admin
+export const checkTask = async (req: Request, res: Response) => {
+  const { telegram_id, task_id } = req.body;
+  try {
+    const user = await User.findOne({ telegram_id });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const task = await Task.findById(task_id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        telegram_id,
+        "task_done.task_id": new mongoose.Types.ObjectId(task_id),
+      },
+      {
+        $set: { "task_done.$.validation_status": "checked" },
+      },
+      {
+        new: true,
+      }
+    );
+
+    res.json({
+      message: "The task status checked by Admin.",
+      updatedUser,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -221,7 +255,7 @@ export const validateTask = async (req: Request, res: Response) => {
         "task_done.task_id": new mongoose.Types.ObjectId(task_id),
       },
       {
-        $set: { "task_done.$.validated": true },
+        $set: { "task_done.$.validation_status": "validated" },
       },
       {
         new: true,

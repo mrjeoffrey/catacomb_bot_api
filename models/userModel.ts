@@ -11,7 +11,7 @@ export interface IUser extends Document {
     completed_date: Date;
     proof_img: string;
     proof_url: string;
-    validated: boolean;
+    validation_status: "unchecked" | "checked" | "validated";
   }[];
   chest_opened_history: { time_opened: Date; xp: number; gold: number }[];
   IP_address: string;
@@ -35,7 +35,11 @@ const userSchema: Schema = new Schema({
       completed_date: { type: Date, default: Date.now },
       proof_img: { type: String },
       proof_url: { type: String },
-      validated: { type: Boolean, default: false },
+      validation_status: {
+        type: String,
+        enum: ["unchecked", "checked", "validated"],
+        default: "unchecked",
+      },
     },
   ],
   chest_opened_history: [
