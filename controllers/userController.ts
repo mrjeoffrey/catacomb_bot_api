@@ -8,10 +8,15 @@ import { isValidObjectId } from "mongoose";
 // Get All Users
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const users = await User.find().populate({
-      path: "referred_by",
-      select: "username _id telegram_id",
-    });
+    const users = await User.find()
+      .populate({
+        path: "referred_by",
+        select: "username _id telegram_id",
+      })
+      .populate({
+        path: "task_done.task_id",
+        select: "name link avatar_url gold_reward xp_reward",
+      });
     if (!users) {
       return res.status(404).json({ message: "Users not found" });
     }
