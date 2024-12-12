@@ -26,6 +26,7 @@ export const getUserById = async (req: Request, res: Response) => {
 
   try {
     const user = await User.findById(id)
+      .populate("referred_by", "username")
       .populate({
         path: "valid_referrals.id",
         select: "telegram_id username _id",
@@ -34,7 +35,6 @@ export const getUserById = async (req: Request, res: Response) => {
         path: "task_done.task_id",
         select: "name link avatar_url gold_reward xp_reward",
       });
-    console.log(user, "USER fetching by Id");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
