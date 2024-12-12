@@ -76,7 +76,7 @@ export const createTask = async (req: Request, res: Response) => {
   if (avatar_url) {
     try {
       const fileData = decodeBase64Image(avatar_url);
-      const mimeType = fileData.type; // Extract MIME type from the decoded image
+      const mimeType = fileData.type;
       const allowedTypes = [
         "image/jpeg",
         "image/png",
@@ -126,10 +126,11 @@ export const createTask = async (req: Request, res: Response) => {
 export const taskProofingOrder = async (req: Request, res: Response) => {
   const { telegram_id, task_id, image, url } = req.body;
   let savedFilePath = "";
+
   if (image) {
     try {
       const fileData = decodeBase64Image(image);
-      const mimeType = fileData.type; // Extract MIME type from the decoded image
+      const mimeType = fileData.type;
       const allowedTypes = [
         "image/jpeg",
         "image/png",
@@ -141,6 +142,7 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
       if (!allowedTypes.includes(mimeType)) {
         return res.status(400).json({ message: "Unsupported image type" });
       }
+
       const fileExtension = mime.extension(mimeType);
       const uniqueFileName = `image-${Date.now()}.${fileExtension}`;
       const filePath = path.join(__dirname, "../public/images", uniqueFileName);
@@ -157,18 +159,39 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const task = await Task.findById(task_id);
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
-    }
-    user.task_done.push({
-      task_id: task_id,
-      proof_img: savedFilePath,
-      completed_date: new Date(),
-      proof_url: url,
-      validated: false,
-    });
+    const existingTask = user.task_done.find(
+      (task) => task.task_id.toString() === task_id
+    );
 
+    if (existingTask) {
+      if (
+        existingTask.proof_img &&
+        fs.existsSync(
+          path.join(__dirname, `../public${existingTask.proof_img}`)
+        )
+      ) {
+        fs.unlinkSync(
+          path.join(__dirname, `../public${existingTask.proof_img}`)
+        );
+      }
+
+      // Update task details
+      existingTask.proof_img = savedFilePath;
+      existingTask.proof_url = url;
+      existingTask.completed_date = new Date();
+      existingTask.validated = false;
+    } else {
+      // Add new task if it doesn't exist
+      user.task_done.push({
+        task_id,
+        proof_img: savedFilePath,
+        proof_url: url,
+        completed_date: new Date(),
+        validated: false,
+      });
+    }
+
+    // Save user data
     await user.save();
 
     res.json({
