@@ -165,7 +165,7 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
 
     if (existingTask) {
       if (existingTask?.validation_status === "validated") {
-        res.json({
+        return res.json({
           message: "You have already done this task.",
         });
       } else {
