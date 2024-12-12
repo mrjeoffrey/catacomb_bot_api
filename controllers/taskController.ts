@@ -164,22 +164,28 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
     );
 
     if (existingTask) {
-      if (
-        existingTask.proof_img &&
-        fs.existsSync(
-          path.join(__dirname, `../public${existingTask.proof_img}`)
-        )
-      ) {
-        fs.unlinkSync(
-          path.join(__dirname, `../public${existingTask.proof_img}`)
-        );
-      }
+      if (existingTask?.validation_status === "validated") {
+        res.json({
+          message: "You have already done this task.",
+        });
+      } else {
+        if (
+          existingTask.proof_img &&
+          fs.existsSync(
+            path.join(__dirname, `../public${existingTask.proof_img}`)
+          )
+        ) {
+          fs.unlinkSync(
+            path.join(__dirname, `../public${existingTask.proof_img}`)
+          );
+        }
 
-      // Update task details
-      existingTask.proof_img = savedFilePath;
-      existingTask.proof_url = url;
-      existingTask.completed_date = new Date();
-      existingTask.validation_status = "unchecked";
+        // Update task details
+        existingTask.proof_img = savedFilePath;
+        existingTask.proof_url = url;
+        existingTask.completed_date = new Date();
+        existingTask.validation_status = "unchecked";
+      }
     } else {
       // Add new task if it doesn't exist
       user.task_done.push({
@@ -303,6 +309,65 @@ export const validateTask = async (req: Request, res: Response) => {
       updatedUser,
     });
   } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Remove Task from User's Task Status and Delete Proof Image
+export const removingTaskfromUserTasksStatus = async (
+  req: Request,
+  res: Response
+) => {
+  const { telegram_id, task_id } = req.body;
+
+  // Check if the task_id is a valid ObjectId
+  if (!mongoose.Types.ObjectId.isValid(task_id)) {
+    return res.status(400).json({ message: "Invalid task ID" });
+  }
+
+  try {
+    const user = await User.findOne({ telegram_id });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Convert task_id to ObjectId
+    const objectIdTask = new mongoose.Types.ObjectId(task_id);
+    console.log(objectIdTask, "Object Task index");
+    // Find the task to remove
+    const taskIndex = user.task_done.findIndex(
+      (task) => task.task_id.toString() === objectIdTask.toString()
+    );
+    console.log(taskIndex, "task index");
+
+    if (taskIndex === -1) {
+      return res.status(404).json({ message: "Task not found for this user" });
+    }
+
+    const taskToRemove = user.task_done[taskIndex];
+
+    // If there's a proof image, remove it from the file system
+    if (taskToRemove.proof_img) {
+      const imagePath = path.join(
+        __dirname,
+        `../public${taskToRemove.proof_img}`
+      );
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    // Remove the task from the user's task_done array
+    user.task_done.splice(taskIndex, 1);
+
+    // Save the updated user document
+    await user.save();
+
+    res.json({
+      message: "Task removed from user's task list, and proof image deleted.",
+    });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
