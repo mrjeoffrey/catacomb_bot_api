@@ -5,6 +5,6 @@ export const logging = async (req: Request, res: Response) => {
     console.log(req.body, "LOGS___");
     res.status(200).json({ message: "LOGS+++" });
   } catch (error) {
-    res.json({ message: "Server error" });
+    res.status(500).json({ message: "Server error" });
   }
 };
