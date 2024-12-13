@@ -429,7 +429,6 @@ export const removeTask = async (req: Request, res: Response) => {
       // Check if the file exists and delete it
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        console.log(`Image file ${filePath} has been removed successfully.`);
       }
     }
 

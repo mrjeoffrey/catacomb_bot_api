@@ -182,7 +182,7 @@ export const createUser = async (req: Request, res: Response) => {
     referral_code,
     location,
   } = req.body;
-
+  console.log(req.body, "Creating User...");
   try {
     const existingUser = await User.findOne({ telegram_id });
     if (existingUser) {
@@ -207,7 +207,7 @@ export const createUser = async (req: Request, res: Response) => {
       IP_address,
       location,
       referral_code: newReferralCode,
-      referred_by: referrer ? referrer._id : null,
+      referred_by: referrer ? referrer?._id : null,
     });
 
     await newUser.save();
