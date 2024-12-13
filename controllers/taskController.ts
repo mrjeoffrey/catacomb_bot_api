@@ -221,6 +221,21 @@ export const checkTask = async (req: Request, res: Response) => {
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
+
+    const existingTask = user.task_done.find(
+      (task) => task.task_id.toString() === task_id
+    );
+
+    // Check if the task status is already "validated" or "checked"
+    if (
+      existingTask &&
+      (existingTask.validation_status === "validated" ||
+        existingTask.validation_status === "checked")
+    ) {
+      return res.json({
+        message: "The task has already been validated or checked.",
+      });
+    }
     const updatedUser = await User.findOneAndUpdate(
       {
         telegram_id,
