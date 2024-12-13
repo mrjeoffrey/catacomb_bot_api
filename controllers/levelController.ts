@@ -96,8 +96,7 @@ let levelsCache: any[] = [];
 
 export const loadLevelsInMemory = async () => {
   try {
-    levelsCache = await Level.find().sort({ xp_required: 1 }); // Sort levels by XP required
-    console.log("Levels loaded into memory");
+    levelsCache = await Level.find().sort({ xp_required: 1 });
   } catch (error) {
     console.error("Error loading levels:", error);
   }

@@ -260,7 +260,6 @@ export const getUserInfo = async (req: Request, res: Response) => {
       path: "valid_referrals.id",
       select: "telegram_id username _id",
     });
-    console.log(user, "USER fetching by telegram Id");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -427,7 +426,6 @@ export const openChest = async (req: Request, res: Response) => {
         const isAlreadyValidReferral = referrer.valid_referrals.some(
           (referral) => referral.id.equals(user._id)
         );
-        console.log(user, "validating user");
         if (!isAlreadyValidReferral) {
           if (user.gold > 0) {
             referrer.valid_referrals.push({
@@ -442,7 +440,6 @@ export const openChest = async (req: Request, res: Response) => {
         );
         referrer.gold += referralGoldReward;
         referrer.xp += settings.referral_earning.xp;
-        console.log(referrer, "referrer");
         await referrer.save();
       }
     }

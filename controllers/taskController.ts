@@ -297,7 +297,7 @@ export const validateTask = async (req: Request, res: Response) => {
         const isAlreadyValidReferral = referrer.valid_referrals.some(
           (referral) => referral.id.equals(user._id)
         );
-        console.log(user, "validating user");
+
         if (!isAlreadyValidReferral) {
           if (user.gold > 0) {
             referrer.valid_referrals.push({
@@ -312,7 +312,6 @@ export const validateTask = async (req: Request, res: Response) => {
         );
         referrer.gold += referralGoldReward;
         referrer.xp += settings.referral_earning.xp;
-        console.log(referrer, "referrer");
         await referrer.save();
       }
     }
@@ -348,12 +347,10 @@ export const removingTaskfromUserTasksStatus = async (
 
     // Convert task_id to ObjectId
     const objectIdTask = new mongoose.Types.ObjectId(task_id);
-    console.log(objectIdTask, "Object Task index");
     // Find the task to remove
     const taskIndex = user.task_done.findIndex(
       (task) => task.task_id.toString() === objectIdTask.toString()
     );
-    console.log(taskIndex, "task index");
 
     if (taskIndex === -1) {
       return res.status(404).json({ message: "Task not found for this user" });
