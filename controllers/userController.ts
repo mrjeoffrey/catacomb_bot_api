@@ -253,6 +253,7 @@ const calculateChestOpeningTime = (
 
 // Get User Info
 export const getUserInfo = async (req: Request, res: Response) => {
+  console.log(req.body, "getting User info...");
   const { telegram_id } = req.body;
 
   try {
