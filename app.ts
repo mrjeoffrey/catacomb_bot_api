@@ -7,6 +7,7 @@ import path from "path";
 
 import connectDB from "./utils/database";
 import adminRoutes from "./routes/adminRoutes";
+import logRoutes from "./routes/logRoutes";
 import userRoutes from "./routes/userRoutes";
 import taskRoutes from "./routes/taskRoutes";
 import settingsRoutes from "./routes/settingsRoutes";
@@ -149,6 +150,7 @@ seedInitialData();
 
 loadLevelsInMemory();
 
+app.use("/api/logs", logRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/tasks", taskRoutes);
