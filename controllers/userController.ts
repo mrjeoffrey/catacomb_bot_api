@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import User, { IUser } from "../models/userModel";
 import Settings from "../models/settingsModel";
+import Task from "../models/taskModel";
 import { getUserLevel } from "./levelController";
 import crypto from "crypto";
 import { isValidObjectId } from "mongoose";
@@ -271,20 +272,46 @@ export const getUserInfo = async (req: Request, res: Response) => {
       1
     );
 
-    // Calculate the user's season XP and gold
+    // Calculate the user's season XP and gold from chest opened history
     const chestOpenedThisSeason = user.chest_opened_history.filter(
       (entry) => entry.time_opened >= startOfMonth
     );
 
-    const seasonXP = chestOpenedThisSeason.reduce(
+    const chestSeasonXP = chestOpenedThisSeason.reduce(
       (sum, entry) => sum + entry.xp,
       0
     );
 
-    const seasonGold = chestOpenedThisSeason.reduce(
+    const chestSeasonGold = chestOpenedThisSeason.reduce(
       (sum, entry) => sum + entry.gold,
       0
     );
+
+    // Calculate XP and gold from validated tasks done this season
+    const tasksDoneThisSeason = user.task_done.filter(
+      (task) =>
+        task.validation_status === "validated" &&
+        task.completed_date >= startOfMonth
+    );
+
+    // Assuming task XP and gold are stored in the task model
+    const tasksSeasonRewards = await Task.find({
+      _id: { $in: tasksDoneThisSeason.map((task) => task.task_id) },
+    });
+
+    const taskSeasonXP = tasksSeasonRewards.reduce(
+      (sum, task) => sum + task.xp_reward,
+      0
+    );
+
+    const taskSeasonGold = tasksSeasonRewards.reduce(
+      (sum, task) => sum + task.gold_reward,
+      0
+    );
+
+    // Combine XP and gold from chests and tasks
+    const seasonXP = chestSeasonXP + taskSeasonXP;
+    const seasonGold = chestSeasonGold + taskSeasonGold;
 
     // Calculate valid referrals this month
     const validReferralsThisMonth = user.valid_referrals.filter(
@@ -322,6 +349,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
           };
         }
       });
+
     // Aggregate rankings for active users
     const rankings = await User.aggregate([
       { $match: { blocked: false } },
@@ -329,35 +357,85 @@ export const getUserInfo = async (req: Request, res: Response) => {
         $project: {
           username: 1,
           telegram_id: 1,
+          // Calculate season_gold including both chest history and validated tasks
           season_gold: {
-            $sum: {
-              $map: {
-                input: {
-                  $filter: {
-                    input: "$chest_opened_history",
+            $add: [
+              {
+                $sum: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: "$chest_opened_history",
+                        as: "entry",
+                        cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                      },
+                    },
                     as: "entry",
-                    cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                    in: "$$entry.gold",
                   },
                 },
-                as: "entry",
-                in: "$$entry.gold",
               },
-            },
+              {
+                $sum: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: "$task_done",
+                        as: "task",
+                        cond: {
+                          $and: [
+                            { $gte: ["$$task.completed_date", startOfMonth] },
+                            { $eq: ["$$task.validation_status", "validated"] },
+                          ],
+                        },
+                      },
+                    },
+                    as: "task",
+                    in: "$$task.gold_reward",
+                  },
+                },
+              },
+            ],
           },
+          // Calculate season_xp including both chest history and validated tasks
           season_xp: {
-            $sum: {
-              $map: {
-                input: {
-                  $filter: {
-                    input: "$chest_opened_history",
+            $add: [
+              {
+                $sum: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: "$chest_opened_history",
+                        as: "entry",
+                        cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                      },
+                    },
                     as: "entry",
-                    cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                    in: "$$entry.xp",
                   },
                 },
-                as: "entry",
-                in: "$$entry.xp",
               },
-            },
+              {
+                $sum: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: "$task_done",
+                        as: "task",
+                        cond: {
+                          $and: [
+                            { $gte: ["$$task.completed_date", startOfMonth] },
+                            { $eq: ["$$task.validation_status", "validated"] },
+                          ],
+                        },
+                      },
+                    },
+                    as: "task",
+                    in: "$$task.xp_reward",
+                  },
+                },
+              },
+            ],
           },
         },
       },
