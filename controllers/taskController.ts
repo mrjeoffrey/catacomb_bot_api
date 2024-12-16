@@ -73,8 +73,19 @@ export const getAllTasks = async (req: Request, res: Response) => {
 };
 
 export const createTask = async (req: Request, res: Response) => {
-  const { name, gold_reward, xp_reward, link, avatar_url } = req.body;
+  const {
+    name,
+    gold_reward,
+    xp_reward,
+    link,
+    avatar_url,
+    is_tg_group_joining_check,
+    group_bot_token,          
+  } = req.body;
+
   let savedFilePath = "";
+
+  // Handle avatar URL
   if (avatar_url) {
     try {
       const fileData = decodeBase64Image(avatar_url);
@@ -101,28 +112,28 @@ export const createTask = async (req: Request, res: Response) => {
     }
   }
 
+  // Create the new task
   try {
-    const task = new Task({
+    const newTask = new Task({
       name,
       gold_reward,
       xp_reward,
-      avatar_url: savedFilePath,
       link,
+      avatar_url: savedFilePath,
+      is_tg_group_joining_check: is_tg_group_joining_check || false,
+      group_bot_token: group_bot_token || "",
     });
-    await task.save();
-    res.json({ message: "Task created successfully", task });
-  } catch (error: any) {
-    console.error(error);
 
-    if (error.name === "ValidationError") {
-      return res.status(400).json({
-        message: "Validation error",
-        details: Object.values(error.errors).map((err: any) => err.message),
-      });
-    }
+    // Save the task to the database
+    await newTask.save();
+
+    res.status(201).json({ message: "Task created successfully", task: newTask });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 //Task Proof
 export const taskProofingOrder = async (req: Request, res: Response) => {
