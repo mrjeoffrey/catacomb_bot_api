@@ -457,6 +457,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
       seconds: seconds_for_next_chest_opening,
       remainingSeconds: remainingSeconds,
       rank: userRank,
+      rankings: rankings,
       valid_referrals: validReferrals,
     };
 
