@@ -6,6 +6,8 @@ export interface ITask extends Document {
   avatar_url: string;
   gold_reward: number;
   xp_reward: number;
+  is_tg_group_joining_check: boolean;
+  group_bot_token: string;
 }
 
 const taskSchema: Schema = new Schema({
@@ -14,6 +16,8 @@ const taskSchema: Schema = new Schema({
   avatar_url: { type: String },
   gold_reward: { type: Number, required: true, min: 200, max: 500 },
   xp_reward: { type: Number, required: true, default: 400 },
+  is_tg_group_joining_check: { type: Boolean, default: false },
+  group_bot_token: { type: String },
 });
 
 export default mongoose.model<ITask>("Task", taskSchema);

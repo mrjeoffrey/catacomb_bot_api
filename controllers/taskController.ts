@@ -8,6 +8,8 @@ import Settings from "../models/settingsModel";
 import { decodeBase64Image } from "../utils/decodeBase64Image";
 import User, { IUser } from "../models/userModel";
 import mongoose from "mongoose";
+import axios from "axios";
+import { handleReferralRewards } from "./userController";
 
 const ensureImagesFolderExists = () => {
   const imagesFolderPath = path.join(__dirname, "../public/images");
@@ -127,84 +129,154 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
   const { telegram_id, task_id, image, url } = req.body;
   let savedFilePath = "";
 
-  if (image) {
-    try {
-      const fileData = decodeBase64Image(image);
-      const mimeType = fileData.type;
-      const allowedTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-        "image/svg+xml",
-      ];
-
-      if (!allowedTypes.includes(mimeType)) {
-        return res.status(400).json({ message: "Unsupported image type" });
-      }
-
-      const fileExtension = mime.extension(mimeType);
-      const uniqueFileName = `image-${Date.now()}.${fileExtension}`;
-      const filePath = path.join(__dirname, "../public/images", uniqueFileName);
-
-      fs.writeFileSync(filePath, fileData.data);
-      savedFilePath = `/images/${uniqueFileName}`;
-    } catch (error) {
-      return res.status(400).json({ message: "Invalid image format" });
-    }
-  }
-
   try {
+    const task = await Task.findById(task_id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
     const user = await User.findOne({ telegram_id });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const existingTask = user.task_done.find(
-      (task) => task.task_id.toString() === task_id
-    );
 
-    if (existingTask) {
-      if (existingTask?.validation_status === "validated") {
+    if (task.is_tg_group_joining_check && task.group_bot_token) {
+      const existingTask = user.task_done.find(
+        (task) => task.task_id.toString() === task_id
+      );
+
+      if (existingTask && existingTask?.validation_status === "validated") {
         return res.json({
           message: "You have already done this task.",
         });
-      } else {
-        if (
-          existingTask.proof_img &&
-          fs.existsSync(
-            path.join(__dirname, `../public${existingTask.proof_img}`)
-          )
-        ) {
-          fs.unlinkSync(
-            path.join(__dirname, `../public${existingTask.proof_img}`)
-          );
+      }
+      else {
+        // Telegram group check logic
+        const chat_id = task.link.split("/").pop(); // Extract @group_name from the link
+        const bot_token = task.group_bot_token;
+        console.log(chat_id, bot_token, "CHAT_ID, BOT_TOKEN")
+
+        const response = await axios.get(
+          `https://api.telegram.org/bot${bot_token}/getChatMember`,
+          {
+            params: {
+              chat_id: `@${chat_id}`,
+              user_id: telegram_id,
+            },
+          }
+        );
+
+        const chatMember = response.data;
+        console.log(response.data, "response data")
+
+        if (!chatMember.ok || chatMember.result.status === "left") {
+          return res.status(400).json({
+            message: "User is not a member of the required Telegram group.",
+          });
         }
 
-        // Update task details
-        existingTask.proof_img = savedFilePath;
-        existingTask.proof_url = url;
-        existingTask.completed_date = new Date();
-        existingTask.validation_status = "unchecked";
+        // Handle referral logic
+        await handleReferralRewards(user, task.gold_reward);
+        await user.save();
+
+        // If user is in the group, directly validate the task
+        user.task_done.push({
+          task_id,
+          proof_img: "", // No proof image needed
+          proof_url: url || "", // Optional proof URL
+          completed_date: new Date(),
+          validation_status: "validated", // Directly mark as validated
+        });
+
+        user.gold += task.gold_reward;
+        user.xp += task.xp_reward;
+        await user.save();
+
+        return res.json({
+          message: "Task validated successfully as the user is in the required group.",
+        });
       }
     } else {
-      // Add new task if it doesn't exist
-      user.task_done.push({
-        task_id,
-        proof_img: savedFilePath,
-        proof_url: url,
-        completed_date: new Date(),
-        validation_status: "unchecked",
+      // Proof image handling for non-Telegram group tasks
+      if (image) {
+        try {
+          const fileData = decodeBase64Image(image);
+          const mimeType = fileData.type;
+          const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+            "image/svg+xml",
+          ];
+
+          if (!allowedTypes.includes(mimeType)) {
+            return res.status(400).json({ message: "Unsupported image type" });
+          }
+
+          const fileExtension = mime.extension(mimeType);
+          const uniqueFileName = `image-${Date.now()}.${fileExtension}`;
+          const filePath = path.join(
+            __dirname,
+            "../public/images",
+            uniqueFileName
+          );
+
+          fs.writeFileSync(filePath, fileData.data);
+          savedFilePath = `/images/${uniqueFileName}`;
+        } catch (error) {
+          return res.status(400).json({ message: "Invalid image format" });
+        }
+      }
+
+      const existingTask = user.task_done.find(
+        (task) => task.task_id.toString() === task_id
+      );
+
+      if (existingTask) {
+        if (existingTask?.validation_status === "validated") {
+          return res.json({
+            message: "You have already done this task.",
+          });
+        } else {
+          if (
+            existingTask.proof_img &&
+            fs.existsSync(
+              path.join(__dirname, `../public${existingTask.proof_img}`)
+            )
+          ) {
+            fs.unlinkSync(
+              path.join(__dirname, `../public${existingTask.proof_img}`)
+            );
+          }
+
+          // Update task details
+          existingTask.proof_img = savedFilePath;
+          existingTask.proof_url = url;
+          existingTask.completed_date = new Date();
+          existingTask.validation_status = "unchecked";
+        }
+      } else {
+        // Add new task if it doesn't exist
+        user.task_done.push({
+          task_id,
+          proof_img: savedFilePath,
+          proof_url: url,
+          completed_date: new Date(),
+          validation_status: "unchecked",
+        });
+      }
+
+      // Save user data
+      await user.save();
+
+      res.json({
+        message:
+          "Your task is currently under review by the admin, along with your proof data.",
       });
     }
-
-    // Save user data
-    await user.save();
-
-    res.json({
-      message:
-        "Your task is currently under review by the admin, along with your proof data.",
-    });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -287,35 +359,7 @@ export const validateTask = async (req: Request, res: Response) => {
     user.xp += task.xp_reward;
 
     // Handle referral logic
-    if (user.referred_by) {
-      const settings = await Settings.findOne();
-      if (!settings) {
-        return res.status(500).json({ message: "Settings not found" });
-      }
-      const referrer = await User.findById(user.referred_by);
-      if (referrer) {
-        const isAlreadyValidReferral = referrer.valid_referrals.some(
-          (referral) => referral.id.equals(user._id)
-        );
-
-        if (!isAlreadyValidReferral) {
-          if (user.gold > 0) {
-            referrer.valid_referrals.push({
-              id: user._id,
-              time_added: new Date(),
-            });
-            referrer.xp += 100;
-          }
-        }
-        const referralGoldReward = Math.floor(
-          (settings.referral_earning.gold_percentage / 100) * task.gold_reward
-        );
-        referrer.gold += referralGoldReward;
-        referrer.xp += settings.referral_earning.xp;
-        await referrer.save();
-      }
-    }
-
+    await handleReferralRewards(user, task.gold_reward);
     await user.save();
 
     res.json({

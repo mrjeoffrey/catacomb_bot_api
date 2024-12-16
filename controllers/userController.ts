@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import User, { IUser } from "../models/userModel";
 import Settings from "../models/settingsModel";
-import Task from "../models/taskModel";
+import Task, { ITask } from "../models/taskModel";
 import { getUserLevel } from "./levelController";
 import crypto from "crypto";
 import { isValidObjectId } from "mongoose";
@@ -501,35 +501,10 @@ export const openChest = async (req: Request, res: Response) => {
       xp: xp_reward,
       gold: gold_reward,
     });
-
-    await user.save();
-
     // Handle referral logic
-    if (user.referred_by) {
-      const referrer = await User.findById(user.referred_by);
-      if (referrer) {
-        // Check if the referred user is already a valid referral
-        const isAlreadyValidReferral = referrer.valid_referrals.some(
-          (referral) => referral.id.equals(user._id)
-        );
-        if (!isAlreadyValidReferral) {
-          if (user.gold > 0) {
-            referrer.valid_referrals.push({
-              id: user._id,
-              time_added: new Date(),
-            });
-            referrer.xp += 100; // Reward referrer with 100 XP for valid referral
-          }
-        }
-        const referralGoldReward = Math.floor(
-          (settings.referral_earning.gold_percentage / 100) * gold_reward
-        );
-        referrer.gold += referralGoldReward;
-        referrer.xp += settings.referral_earning.xp;
-        await referrer.save();
-      }
-    }
-
+    await handleReferralRewards(user, gold_reward);
+    
+    await user.save();
     res.json({
       message: "Chest opened",
       gold: gold_reward,
@@ -538,5 +513,38 @@ export const openChest = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const handleReferralRewards = async (user: IUser, gold_reward: number) => {
+  if (user.referred_by) {
+    const settings = await Settings.findOne();
+    if (!settings) {
+      throw new Error("Settings not found");
+    }
+
+    const referrer = await User.findById(user.referred_by);
+    if (referrer) {
+      const isAlreadyValidReferral = referrer.valid_referrals.some(
+        (referral) => referral.id.equals(user._id)
+      );
+
+      if (!isAlreadyValidReferral) {
+        if (user.gold > 0) {
+          referrer.valid_referrals.push({
+            id: user._id,
+            time_added: new Date(),
+          });
+          referrer.xp += 100;
+        }
+      }
+
+      const referralGoldReward = Math.floor(
+        (settings.referral_earning.gold_percentage / 100) * gold_reward
+      );
+      referrer.gold += referralGoldReward;
+      referrer.xp += settings.referral_earning.xp;
+      await referrer.save();
+    }
   }
 };
