@@ -354,10 +354,17 @@ export const getUserInfo = async (req: Request, res: Response) => {
     const rankings = await User.aggregate([
       { $match: { blocked: false } },
       {
+        $lookup: {
+          from: "tasks", // Name of the Task collection
+          localField: "task_done.task_id",
+          foreignField: "_id",
+          as: "tasks_info",
+        },
+      },
+      {
         $project: {
           username: 1,
           telegram_id: 1,
-          // Calculate season_gold including both chest history and validated tasks
           season_gold: {
             $add: [
               {
@@ -380,7 +387,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
                   $map: {
                     input: {
                       $filter: {
-                        input: "$task_done",
+                        input: "$tasks_info",
                         as: "task",
                         cond: {
                           $and: [
@@ -397,7 +404,6 @@ export const getUserInfo = async (req: Request, res: Response) => {
               },
             ],
           },
-          // Calculate season_xp including both chest history and validated tasks
           season_xp: {
             $add: [
               {
@@ -420,7 +426,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
                   $map: {
                     input: {
                       $filter: {
-                        input: "$task_done",
+                        input: "$tasks_info",
                         as: "task",
                         cond: {
                           $and: [
