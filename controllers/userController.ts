@@ -147,6 +147,7 @@ export const getUserById = async (req: Request, res: Response) => {
         },
       },
       { $sort: { season_gold: -1, season_xp: -1 } },
+      { $limit: 15 },
     ]);
 
     const userRank =
