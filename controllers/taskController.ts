@@ -165,7 +165,6 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
         // Telegram group check logic
         const chat_id = task.link.split("/").pop(); // Extract @group_name from the link
         const bot_token = task.group_bot_token;
-        console.log(chat_id, bot_token, "CHAT_ID, BOT_TOKEN")
 
         const response = await axios.get(
           `https://api.telegram.org/bot${bot_token}/getChatMember`,
@@ -178,7 +177,6 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
         );
 
         const chatMember = response.data;
-        console.log(response.data, "response data")
 
         if (!chatMember.ok || chatMember.result.status === "left") {
           return res.status(400).json({

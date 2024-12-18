@@ -27,6 +27,35 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+function getCurrentSeason() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-indexed (0 = January)
+  const day = now.getDate();
+
+  let seasonStart, seasonEnd;
+
+  if (month === 0 || month % 2 === 0) { // January, March, etc.
+    if (day <= 14) {
+      seasonStart = new Date(year, month, 1); // 1st of the month
+      seasonEnd = new Date(year, month, 14); // 14th of the month
+    } else {
+      seasonStart = new Date(year, month, 15); // 15th of the month
+      seasonEnd = new Date(year, month + 1, 0); // End of the month
+    }
+  } else { // February, April, etc.
+    if (day <= 14) {
+      seasonStart = new Date(year, month, 1); // 1st of the month
+      seasonEnd = new Date(year, month, 14); // 14th of the month
+    } else {
+      seasonStart = new Date(year, month, 15); // 15th of the month
+      seasonEnd = new Date(year, month + 1, 0); // End of the month
+    }
+  }
+
+  return { seasonStart, seasonEnd };
+}
+
 // Get User Info
 export const getUserById = async (req: Request, res: Response) => {
   const { id } = req.body;
@@ -49,16 +78,10 @@ export const getUserById = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
-    const startOfMonth = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1
-    );
-
+    const { seasonStart, seasonEnd } = getCurrentSeason();
     // Calculate the user's season XP and gold
     const chestOpenedThisSeason = user.chest_opened_history.filter(
-      (entry) => entry.time_opened >= startOfMonth
+      (entry) => entry.time_opened >= seasonStart && entry.time_opened <= seasonEnd
     );
 
     const seasonXP = chestOpenedThisSeason.reduce(
@@ -72,11 +95,11 @@ export const getUserById = async (req: Request, res: Response) => {
     );
 
     // Calculate valid referrals this month
-    const validReferralsThisMonth = user.valid_referrals.filter(
-      (referral) => referral.time_added >= startOfMonth
+    const validReferralsThisSeason = user.valid_referrals.filter(
+      (referral) =>
+        referral.time_added >= seasonStart && referral.time_added <= seasonEnd
     );
-
-    const additionalXP = validReferralsThisMonth.length * 100;
+    const additionalXP = validReferralsThisSeason.length * 100;
 
     // Total season XP including referral XP
     const totalSeasonXP = seasonXP + additionalXP;
@@ -121,7 +144,12 @@ export const getUserById = async (req: Request, res: Response) => {
                   $filter: {
                     input: "$chest_opened_history",
                     as: "entry",
-                    cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                    cond: { 
+                      $and: [
+                        { $gte: ["$$entry.time_opened", seasonStart] },
+                        { $lte: ["$$entry.time_opened", seasonEnd] }
+                      ]
+                    }
                   },
                 },
                 as: "entry",
@@ -136,7 +164,12 @@ export const getUserById = async (req: Request, res: Response) => {
                   $filter: {
                     input: "$chest_opened_history",
                     as: "entry",
-                    cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                    cond: { 
+                      $and: [
+                        { $gte: ["$$entry.time_opened", seasonStart] },
+                        { $lte: ["$$entry.time_opened", seasonEnd] }
+                      ]
+                    }
                   },
                 },
                 as: "entry",
@@ -184,7 +217,7 @@ export const createUser = async (req: Request, res: Response) => {
     referral_code,
     location,
   } = req.body;
-  console.log(req.body, "Creating User...");
+  
   try {
     const existingUser = await User.findOne({ telegram_id });
     if (existingUser) {
@@ -255,7 +288,6 @@ const calculateChestOpeningTime = (
 
 // Get User Info
 export const getUserInfo = async (req: Request, res: Response) => {
-  console.log(req.body, "getting User info...");
   const { telegram_id } = req.body;
 
   try {
@@ -267,15 +299,10 @@ export const getUserInfo = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const startOfMonth = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1
-    );
-
+    const { seasonStart, seasonEnd } = getCurrentSeason();
     // Calculate the user's season XP and gold from chest opened history
     const chestOpenedThisSeason = user.chest_opened_history.filter(
-      (entry) => entry.time_opened >= startOfMonth
+      (entry) => entry.time_opened >= seasonStart && entry.time_opened <= seasonEnd
     );
 
     const chestSeasonXP = chestOpenedThisSeason.reduce(
@@ -292,7 +319,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
     const tasksDoneThisSeason = user.task_done.filter(
       (task) =>
         task.validation_status === "validated" &&
-        task.completed_date >= startOfMonth
+        task.completed_date >= seasonStart &&
+        task.completed_date <= seasonEnd
     );
 
     // Assuming task XP and gold are stored in the task model
@@ -316,7 +344,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
 
     // Calculate valid referrals this month
     const validReferralsThisMonth = user.valid_referrals.filter(
-      (referral) => referral.time_added >= startOfMonth
+      (referral) =>
+        referral.time_added >= seasonStart && referral.time_added <= seasonEnd
     );
 
     const additionalXP = validReferralsThisMonth.length * 100;
@@ -375,7 +404,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
                       $filter: {
                         input: "$chest_opened_history",
                         as: "entry",
-                        cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                        cond: { $gte: ["$$entry.time_opened", seasonStart], $lte: ["$$entry.time_opened", seasonEnd] },
                       },
                     },
                     as: "entry",
@@ -392,7 +421,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
                         as: "task",
                         cond: {
                           $and: [
-                            { $gte: ["$$task.completed_date", startOfMonth] },
+                            { $gte: ["$$task.completed_date", seasonStart] },
+                            { $lte: ["$$task.completed_date", seasonEnd] },
                             { $eq: ["$$task.validation_status", "validated"] },
                           ],
                         },
@@ -411,10 +441,12 @@ export const getUserInfo = async (req: Request, res: Response) => {
                 $sum: {
                   $map: {
                     input: {
-                      $filter: {
-                        input: "$chest_opened_history",
-                        as: "entry",
-                        cond: { $gte: ["$$entry.time_opened", startOfMonth] },
+                      cond: {
+                        $and: [
+                          { $gte: ["$$task.completed_date", seasonStart] },
+                          { $lte: ["$$task.completed_date", seasonEnd] },
+                          { $eq: ["$$task.validation_status", "validated"] },
+                        ],
                       },
                     },
                     as: "entry",
@@ -431,7 +463,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
                         as: "task",
                         cond: {
                           $and: [
-                            { $gte: ["$$task.completed_date", startOfMonth] },
+                            { $gte: ["$$task.completed_date", seasonStart] },
+                            { $lte: ["$$task.completed_date", seasonEnd] },
                             { $eq: ["$$task.validation_status", "validated"] },
                           ],
                         },
