@@ -404,7 +404,12 @@ export const getUserInfo = async (req: Request, res: Response) => {
                       $filter: {
                         input: "$chest_opened_history",
                         as: "entry",
-                        cond: { $gte: ["$$entry.time_opened", seasonStart], $lte: ["$$entry.time_opened", seasonEnd] },
+                        cond: {
+                          $and: [
+                            { $gte: ["$$entry.time_opened", seasonStart] },
+                            { $lte: ["$$entry.time_opened", seasonEnd] },
+                          ],
+                        },
                       },
                     },
                     as: "entry",
