@@ -314,7 +314,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
       (sum, entry) => sum + entry.gold,
       0
     );
-
+   
     // Calculate XP and gold from validated tasks done this season
     const tasksDoneThisSeason = user.task_done.filter(
       (task) =>
@@ -434,7 +434,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
                       },
                     },
                     as: "task",
-                    in: "$$task.gold_reward",
+                    in: { $ifNull: ["$$task.gold_reward", 0] }, // Ensure gold_reward exists
                   },
                 },
               },
@@ -446,12 +446,15 @@ export const getUserInfo = async (req: Request, res: Response) => {
                 $sum: {
                   $map: {
                     input: {
-                      cond: {
-                        $and: [
-                          { $gte: ["$$task.completed_date", seasonStart] },
-                          { $lte: ["$$task.completed_date", seasonEnd] },
-                          { $eq: ["$$task.validation_status", "validated"] },
-                        ],
+                      $filter: {
+                        input: "$chest_opened_history",
+                        as: "entry",
+                        cond: {
+                          $and: [
+                            { $gte: ["$$entry.time_opened", seasonStart] },
+                            { $lte: ["$$entry.time_opened", seasonEnd] },
+                          ],
+                        },
                       },
                     },
                     as: "entry",
@@ -476,7 +479,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
                       },
                     },
                     as: "task",
-                    in: "$$task.xp_reward",
+                    in: { $ifNull: ["$$task.xp_reward", 0] }, // Ensure xp_reward exists
                   },
                 },
               },
@@ -485,6 +488,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
         },
       },
       { $sort: { season_gold: -1, season_xp: -1 } },
+      { $limit: 15 },
     ]);
 
     const userRank =
