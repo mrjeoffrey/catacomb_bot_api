@@ -80,7 +80,7 @@ export const createTask = async (req: Request, res: Response) => {
     link,
     avatar_url,
     is_tg_group_joining_check,
-    group_bot_token,          
+    group_bot_token,
   } = req.body;
 
   let savedFilePath = "";
@@ -439,13 +439,13 @@ export const removingTaskfromUserTasksStatus = async (
 
 export const updateTask = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, gold_reward, xp_reward, link } = req.body;
+  const { name, gold_reward, xp_reward, link, is_tg_group_joining_check, group_bot_token } = req.body;
   const avatar_url = req.file ? `/images/${req.file.filename}` : undefined;
 
   try {
     const task = await Task.findByIdAndUpdate(
       id,
-      { name, gold_reward, xp_reward, avatar_url, link },
+      { name, gold_reward, xp_reward, avatar_url, link, is_tg_group_joining_check, group_bot_token },
       { new: true, runValidators: true }
     );
 
