@@ -35,26 +35,20 @@ function getCurrentSeason() {
 
   let seasonStart, seasonEnd;
 
-  if (month === 0 || month % 2 === 0) { // January, March, etc.
-    if (day <= 14) {
-      seasonStart = new Date(year, month, 1); // 1st of the month
-      seasonEnd = new Date(year, month, 14); // 14th of the month
-    } else {
-      seasonStart = new Date(year, month, 15); // 15th of the month
-      seasonEnd = new Date(year, month + 1, 0); // End of the month
-    }
-  } else { // February, April, etc.
-    if (day <= 14) {
-      seasonStart = new Date(year, month, 1); // 1st of the month
-      seasonEnd = new Date(year, month, 14); // 14th of the month
-    } else {
-      seasonStart = new Date(year, month, 15); // 15th of the month
-      seasonEnd = new Date(year, month + 1, 0); // End of the month
-    }
+  if (year === 2024 && month === 11) { // Special logic for December 2024
+    seasonStart = new Date(year, month, day); // Today in December 2024
+    seasonEnd = new Date(year + 1, 0, 14); // January 14, 2025
+  } else if (day <= 14) {
+    seasonStart = new Date(year, month, 1); // 1st of the month
+    seasonEnd = new Date(year, month, 14); // 14th of the month
+  } else {
+    seasonStart = new Date(year, month, 15); // 15th of the month
+    seasonEnd = new Date(year, month + 1, 0); // End of the month
   }
 
   return { seasonStart, seasonEnd };
 }
+
 
 // Get User Info
 export const getUserById = async (req: Request, res: Response) => {
