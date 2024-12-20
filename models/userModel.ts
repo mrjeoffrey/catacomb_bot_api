@@ -21,6 +21,8 @@ export interface IUser extends Document {
   valid_referrals: { id: Types.ObjectId; time_added: Date }[];
   blocked: boolean;
   created_at: Date;
+  current_season_xp: number;
+  current_season_gold: number;
 }
 
 const userSchema: Schema = new Schema({
@@ -61,6 +63,8 @@ const userSchema: Schema = new Schema({
   ],
   blocked: { type: Boolean, default: false },
   created_at: { type: Date, default: Date.now },
+  current_season_xp: { type: Number },
+  current_season_gold: { type: Number }
 });
 
 export default mongoose.model<IUser>("User", userSchema);

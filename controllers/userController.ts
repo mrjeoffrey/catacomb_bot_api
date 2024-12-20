@@ -56,136 +56,18 @@ const getCurrentSeason = () => {
 }
 
 const getRankings = async (current_user: IUser) => {
-  const { seasonStart, seasonEnd } = getCurrentSeason();
-
-  // Retrieve all user rankings
+  // Retrieve all user rankings, comparing current_season_xp and current_season_gold
   const allRankings = await User.aggregate([
     { $match: { blocked: false } },
-    {
-      $lookup: {
-        from: "tasks",
-        localField: "task_done.task_id",
-        foreignField: "_id",
-        as: "tasks_info",
-      },
-    },
     {
       $project: {
         username: 1,
         telegram_id: 1,
-        // season_gold: {
-        //   $add: [
-        //     {
-        //       $sum: {
-        //         $map: {
-        //           input: {
-        //             $filter: {
-        //               input: "$chest_opened_history",
-        //               as: "entry",
-        //               cond: {
-        //                 $and: [
-        //                   { $gte: ["$$entry.time_opened", seasonStart] },
-        //                   { $lte: ["$$entry.time_opened", seasonEnd] },
-        //                 ],
-        //               },
-        //             },
-        //           },
-        //           as: "entry",
-        //           in: "$$entry.gold",
-        //         },
-        //       },
-        //     },
-        //     {
-        //       $sum: {
-        //         $map: {
-        //           input: {
-        //             $filter: {
-        //               input: "$tasks_info",
-        //               as: "task",
-        //               cond: {
-        //                 $and: [
-        //                   { $gte: ["$$task.completed_date", seasonStart] },
-        //                   { $lte: ["$$task.completed_date", seasonEnd] },
-        //                   { $eq: ["$$task.validation_status", "validated"] },
-        //                 ],
-        //               },
-        //             },
-        //           },
-        //           as: "task",
-        //           in: { $ifNull: ["$$task.gold_reward", 0] },
-        //         },
-        //       },
-        //     },
-        //   ],
-        // },
-        season_xp: {
-          $add: [
-            {
-              $sum: {
-                $map: {
-                  input: {
-                    $filter: {
-                      input: "$chest_opened_history",
-                      as: "entry",
-                      cond: {
-                        $and: [
-                          { $gte: ["$$entry.time_opened", seasonStart] },
-                          { $lte: ["$$entry.time_opened", seasonEnd] },
-                        ],
-                      },
-                    },
-                  },
-                  as: "entry",
-                  in: "$$entry.xp",
-                },
-              },
-            },
-            {
-              $sum: {
-                $map: {
-                  input: {
-                    $filter: {
-                      input: "$tasks_info",
-                      as: "task",
-                      cond: {
-                        $and: [
-                          { $gte: ["$$task.completed_date", seasonStart] },
-                          { $lte: ["$$task.completed_date", seasonEnd] },
-                          { $eq: ["$$task.validation_status", "validated"] },
-                        ],
-                      },
-                    },
-                  },
-                  as: "task",
-                  in: { $ifNull: ["$$task.xp_reward", 0] },
-                },
-              },
-            },
-            {
-              $multiply: [
-                {
-                  $size: {
-                    $filter: {
-                      input: "$valid_referrals",
-                      as: "referral",
-                      cond: {
-                        $and: [
-                          { $gte: ["$$referral.time_added", seasonStart] },
-                          { $lte: ["$$referral.time_added", seasonEnd] },
-                        ],
-                      },
-                    },
-                  },
-                },
-                100, // additional XP per valid referral
-              ],
-            },
-          ],
-        },
+        current_season_xp: 1,
+        current_season_gold: 1,
       },
     },
-    { $sort: { season_xp: -1, }}
-      //season_gold: -1 } },
+    { $sort: { current_season_xp: -1, current_season_gold: -1 } }, // Sort by XP first, then by gold
   ]);
 
   // Add ranking numbers to all users
@@ -450,6 +332,10 @@ export const getUserInfo = async (req: Request, res: Response) => {
     // Total season XP including referral XP
     const totalSeasonXP = seasonXP + additionalXP;
 
+    user.current_season_xp = totalSeasonXP;
+    user.current_season_gold = seasonGold;
+
+    await user.save();
     // Calculate user level and chest opening time
     const { level, seconds_for_next_chest_opening } = getUserLevel(user.xp);
     const remainingSeconds = calculateChestOpeningTime(
@@ -476,7 +362,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
           };
         }
       });
-
+    
     const { rankings, currentUserRank } = await getRankings(user);
     // Convert the Mongoose document to a plain JavaScript object
     const userPlainObject = user.toObject();
