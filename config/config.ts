@@ -9,7 +9,7 @@ export const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 export const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 
 export const STAKING_APP_URL = "t.me/CataStakingBot/catacomb";
-export const WEBSITE_URL = "https://t.me/catatTestbot/CATAFRONTTEST";
+export const WEBSITE_URL = "https://t.me/catacombseasonone_bot/CATACOMB";
 export const TG_URL = "https://t.me/catacombTON";
 export const ANNOUNCEMENTS_URL = "https://t.me/catacombTON";
 export const TWITTER_URL = "https://x.com/catacombTON";
