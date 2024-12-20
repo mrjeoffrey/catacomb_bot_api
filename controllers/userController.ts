@@ -27,7 +27,7 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
-function getCurrentSeason() {
+const getCurrentSeason = () => {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth(); // 0-indexed (0 = January)
@@ -35,19 +35,27 @@ function getCurrentSeason() {
 
   let seasonStart, seasonEnd;
 
-  if (year === 2024 && month === 11) { // Special logic for December 2024
-    seasonStart = new Date(year, month, day); // Today in December 2024
-    seasonEnd = new Date(year + 1, 0, 14); // January 14, 2025
-  } else if (day <= 14) {
-    seasonStart = new Date(year, month, 1); // 1st of the month
-    seasonEnd = new Date(year, month, 14); // 14th of the month
+  // Special case for the first season: December 20, 2024, to January 14, 2025
+  if ((year === 2024 && month === 11 && day >= 20) || (year === 2025 && month === 0 && day <= 14)) {
+    seasonStart = new Date(2024, 11, 20); // December 20, 2024
+    seasonEnd = new Date(2025, 0, 14);   // January 14, 2025
   } else {
-    seasonStart = new Date(year, month, 15); // 15th of the month
-    seasonEnd = new Date(year, month + 1, 0); // End of the month
+    // General rule for seasons
+    if (day <= 14) {
+      // First half of the month
+      seasonStart = new Date(year, month, 1);  // 1st of the current month
+      seasonEnd = new Date(year, month, 14);  // 14th of the current month
+    } else {
+      // Second half of the month
+      seasonStart = new Date(year, month, 15); // 15th of the current month
+      seasonEnd = new Date(year, month + 1, 0); // Last day of the current month
+    }
   }
 
   return { seasonStart, seasonEnd };
 }
+
+
 
 
 // Get User Info
