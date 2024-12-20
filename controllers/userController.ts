@@ -306,7 +306,6 @@ export const getUserInfo = async (req: Request, res: Response) => {
     const chestOpenedThisSeason = user.chest_opened_history.filter(
       (entry) => entry.time_opened >= seasonStart && entry.time_opened <= seasonEnd
     );
-    console.log(chestOpenedThisSeason, "___")
 
     const chestSeasonXP = chestOpenedThisSeason.reduce(
       (sum, entry) => sum + entry.xp,
