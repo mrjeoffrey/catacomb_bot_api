@@ -10,6 +10,7 @@ import {
   validateTask,
   checkTask,
   removingTaskfromUserTasksStatus,
+  updateTaskOrder,
 } from "../controllers/taskController";
 
 const router = express.Router();
@@ -20,6 +21,7 @@ router.post("/validate", validateTask);
 router.post("/check", checkTask);
 router.post("/remove_from_user", removingTaskfromUserTasksStatus);
 router.post("/:id", uploadAvatar, updateTask);
+router.post("/reorder", updateTaskOrder);
 router.get("/:id", removeTask);
 
 export default router;

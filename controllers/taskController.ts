@@ -65,7 +65,7 @@ const upload = multer({
 
 export const getAllTasks = async (req: Request, res: Response) => {
   try {
-    const tasks = await Task.find();
+    const tasks = await Task.find().sort('order_index');
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -462,6 +462,22 @@ export const updateTask = async (req: Request, res: Response) => {
         details: Object.values(error.errors).map((err: any) => err.message),
       });
     }
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const updateTaskOrder = async (req: Request, res: Response) => {
+  const { orderedTaskIds } = req.body;
+
+  try {
+    for (let i = 0; i < orderedTaskIds.length; i++) {
+      const taskId = orderedTaskIds[i];
+      await Task.findByIdAndUpdate(taskId, { order_ndex: i });
+    }
+
+    res.json({ message: "Tasks reordered successfully" });
+  } catch (error: any) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
