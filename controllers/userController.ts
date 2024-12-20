@@ -176,7 +176,7 @@ const getRankings = async (current_user: IUser) => {
 
   // Find the current user's rank
   const currentUserRanking = allRankings.find(
-    (user) => user.telegram_id === current_user
+    (user) => user.telegram_id === current_user?.telegram_id
   );
 
   // Get the top 15 rankings
