@@ -187,7 +187,7 @@ const getRankings = async (current_user: IUser) => {
     topRankings.push(currentUserRanking);
   }
 
-  return { rankings: topRankings, currentUserRank: currentUserRanking?.rank || "Unranked" };
+  return { rankings: topRankings, currentUserRank: currentUserRanking?.rank };
 };
 
 
