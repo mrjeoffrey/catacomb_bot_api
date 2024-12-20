@@ -161,6 +161,25 @@ const getRankings = async (current_user: IUser) => {
                 },
               },
             },
+            {
+              $multiply: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$valid_referrals",
+                      as: "referral",
+                      cond: {
+                        $and: [
+                          { $gte: ["$$referral.time_added", seasonStart] },
+                          { $lte: ["$$referral.time_added", seasonEnd] },
+                        ],
+                      },
+                    },
+                  },
+                },
+                100, // additional XP per valid referral
+              ],
+            },
           ],
         },
       },
