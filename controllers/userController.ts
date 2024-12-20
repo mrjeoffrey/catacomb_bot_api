@@ -55,7 +55,7 @@ const getCurrentSeason = () => {
   return { seasonStart, seasonEnd };
 }
 
-const getRankings = async (current_user) => {
+const getRankings = async (current_user: IUser) => {
   const { seasonStart, seasonEnd } = getCurrentSeason();
 
   // Retrieve all user rankings
