@@ -55,7 +55,140 @@ const getCurrentSeason = () => {
   return { seasonStart, seasonEnd };
 }
 
+const getRankings = async (current_user) => {
+  const { seasonStart, seasonEnd } = getCurrentSeason();
 
+  // Retrieve all user rankings
+  const allRankings = await User.aggregate([
+    { $match: { blocked: false } },
+    {
+      $lookup: {
+        from: "tasks",
+        localField: "task_done.task_id",
+        foreignField: "_id",
+        as: "tasks_info",
+      },
+    },
+    {
+      $project: {
+        username: 1,
+        telegram_id: 1,
+        // season_gold: {
+        //   $add: [
+        //     {
+        //       $sum: {
+        //         $map: {
+        //           input: {
+        //             $filter: {
+        //               input: "$chest_opened_history",
+        //               as: "entry",
+        //               cond: {
+        //                 $and: [
+        //                   { $gte: ["$$entry.time_opened", seasonStart] },
+        //                   { $lte: ["$$entry.time_opened", seasonEnd] },
+        //                 ],
+        //               },
+        //             },
+        //           },
+        //           as: "entry",
+        //           in: "$$entry.gold",
+        //         },
+        //       },
+        //     },
+        //     {
+        //       $sum: {
+        //         $map: {
+        //           input: {
+        //             $filter: {
+        //               input: "$tasks_info",
+        //               as: "task",
+        //               cond: {
+        //                 $and: [
+        //                   { $gte: ["$$task.completed_date", seasonStart] },
+        //                   { $lte: ["$$task.completed_date", seasonEnd] },
+        //                   { $eq: ["$$task.validation_status", "validated"] },
+        //                 ],
+        //               },
+        //             },
+        //           },
+        //           as: "task",
+        //           in: { $ifNull: ["$$task.gold_reward", 0] },
+        //         },
+        //       },
+        //     },
+        //   ],
+        // },
+        season_xp: {
+          $add: [
+            {
+              $sum: {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: "$chest_opened_history",
+                      as: "entry",
+                      cond: {
+                        $and: [
+                          { $gte: ["$$entry.time_opened", seasonStart] },
+                          { $lte: ["$$entry.time_opened", seasonEnd] },
+                        ],
+                      },
+                    },
+                  },
+                  as: "entry",
+                  in: "$$entry.xp",
+                },
+              },
+            },
+            {
+              $sum: {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: "$tasks_info",
+                      as: "task",
+                      cond: {
+                        $and: [
+                          { $gte: ["$$task.completed_date", seasonStart] },
+                          { $lte: ["$$task.completed_date", seasonEnd] },
+                          { $eq: ["$$task.validation_status", "validated"] },
+                        ],
+                      },
+                    },
+                  },
+                  as: "task",
+                  in: { $ifNull: ["$$task.xp_reward", 0] },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+    { $sort: { season_xp: -1, }}
+      //season_gold: -1 } },
+  ]);
+
+  // Add ranking numbers to all users
+  allRankings.forEach((user, index) => {
+    user.rank = index + 1;
+  });
+
+  // Find the current user's rank
+  const currentUserRanking = allRankings.find(
+    (user) => user.telegram_id === current_user
+  );
+
+  // Get the top 15 rankings
+  const topRankings = allRankings.slice(0, 15);
+
+  // If current user is outside the top 15, include them
+  if (currentUserRanking && currentUserRanking.rank > 15) {
+    topRankings.push(currentUserRanking);
+  }
+
+  return { rankings: topRankings, currentUserRank: currentUserRanking?.rank || "Unranked" };
+};
 
 
 // Get User Info
@@ -133,60 +266,7 @@ export const getUserById = async (req: Request, res: Response) => {
         }
       });
     // Aggregate rankings for active users
-    const rankings = await User.aggregate([
-      { $match: { blocked: false } },
-      {
-        $project: {
-          username: 1,
-          telegram_id: 1,
-          season_gold: {
-            $sum: {
-              $map: {
-                input: {
-                  $filter: {
-                    input: "$chest_opened_history",
-                    as: "entry",
-                    cond: { 
-                      $and: [
-                        { $gte: ["$$entry.time_opened", seasonStart] },
-                        { $lte: ["$$entry.time_opened", seasonEnd] }
-                      ]
-                    }
-                  },
-                },
-                as: "entry",
-                in: "$$entry.gold",
-              },
-            },
-          },
-          season_xp: {
-            $sum: {
-              $map: {
-                input: {
-                  $filter: {
-                    input: "$chest_opened_history",
-                    as: "entry",
-                    cond: { 
-                      $and: [
-                        { $gte: ["$$entry.time_opened", seasonStart] },
-                        { $lte: ["$$entry.time_opened", seasonEnd] }
-                      ]
-                    }
-                  },
-                },
-                as: "entry",
-                in: "$$entry.xp",
-              },
-            },
-          },
-        },
-      },
-      { $sort: { season_gold: -1, season_xp: -1 } },
-      { $limit: 15 },
-    ]);
-
-    const userRank =
-      rankings.findIndex((r) => r.telegram_id === user.telegram_id) + 1;
+    const { rankings, currentUserRank } = await getRankings(user);
 
     // Convert the Mongoose document to a plain JavaScript object
     const userPlainObject = user.toObject();
@@ -199,7 +279,8 @@ export const getUserById = async (req: Request, res: Response) => {
       level: level,
       seconds: seconds_for_next_chest_opening,
       remainingSeconds: remainingSeconds,
-      rank: userRank,
+      rankings:rankings,
+      rank: currentUserRank,
       valid_referrals: validReferrals,
     };
 
@@ -382,120 +463,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
         }
       });
 
-    // Aggregate rankings for active users
-    const rankings = await User.aggregate([
-      { $match: { blocked: false } },
-      {
-        $lookup: {
-          from: "tasks", // Name of the Task collection
-          localField: "task_done.task_id",
-          foreignField: "_id",
-          as: "tasks_info",
-        },
-      },
-      {
-        $project: {
-          username: 1,
-          telegram_id: 1,
-          season_gold: {
-            $add: [
-              {
-                $sum: {
-                  $map: {
-                    input: {
-                      $filter: {
-                        input: "$chest_opened_history",
-                        as: "entry",
-                        cond: {
-                          $and: [
-                            { $gte: ["$$entry.time_opened", seasonStart] },
-                            { $lte: ["$$entry.time_opened", seasonEnd] },
-                          ],
-                        },
-                      },
-                    },
-                    as: "entry",
-                    in: "$$entry.gold",
-                  },
-                },
-              },
-              {
-                $sum: {
-                  $map: {
-                    input: {
-                      $filter: {
-                        input: "$tasks_info",
-                        as: "task",
-                        cond: {
-                          $and: [
-                            { $gte: ["$$task.completed_date", seasonStart] },
-                            { $lte: ["$$task.completed_date", seasonEnd] },
-                            { $eq: ["$$task.validation_status", "validated"] },
-                          ],
-                        },
-                      },
-                    },
-                    as: "task",
-                    in: { $ifNull: ["$$task.gold_reward", 0] }, // Ensure gold_reward exists
-                  },
-                },
-              },
-            ],
-          },
-          season_xp: {
-            $add: [
-              {
-                $sum: {
-                  $map: {
-                    input: {
-                      $filter: {
-                        input: "$chest_opened_history",
-                        as: "entry",
-                        cond: {
-                          $and: [
-                            { $gte: ["$$entry.time_opened", seasonStart] },
-                            { $lte: ["$$entry.time_opened", seasonEnd] },
-                          ],
-                        },
-                      },
-                    },
-                    as: "entry",
-                    in: "$$entry.xp",
-                  },
-                },
-              },
-              {
-                $sum: {
-                  $map: {
-                    input: {
-                      $filter: {
-                        input: "$tasks_info",
-                        as: "task",
-                        cond: {
-                          $and: [
-                            { $gte: ["$$task.completed_date", seasonStart] },
-                            { $lte: ["$$task.completed_date", seasonEnd] },
-                            { $eq: ["$$task.validation_status", "validated"] },
-                          ],
-                        },
-                      },
-                    },
-                    as: "task",
-                    in: { $ifNull: ["$$task.xp_reward", 0] }, // Ensure xp_reward exists
-                  },
-                },
-              },
-            ],
-          },
-        },
-      },
-      { $sort: { season_gold: -1, season_xp: -1 } },
-      { $limit: 15 },
-    ]);
-
-    const userRank =
-      rankings.findIndex((r) => r.telegram_id === telegram_id) + 1;
-
+    const { rankings, currentUserRank } = await getRankings(user);
     // Convert the Mongoose document to a plain JavaScript object
     const userPlainObject = user.toObject();
 
@@ -507,7 +475,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
       level: level,
       seconds: seconds_for_next_chest_opening,
       remainingSeconds: remainingSeconds,
-      rank: userRank,
+      rank: currentUserRank,
       rankings: rankings,
       valid_referrals: validReferrals,
     };
