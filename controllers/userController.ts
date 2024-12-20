@@ -182,11 +182,6 @@ const getRankings = async (current_user: IUser) => {
   // Get the top 15 rankings
   const topRankings = allRankings.slice(0, 15);
 
-  // If current user is outside the top 15, include them
-  if (currentUserRanking && currentUserRanking.rank > 15) {
-    topRankings.push(currentUserRanking);
-  }
-
   return { rankings: topRankings, currentUserRank: currentUserRanking?.rank };
 };
 
