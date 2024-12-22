@@ -471,7 +471,9 @@ export const updateTaskOrder = async (req: Request, res: Response) => {
 
   try {
     for (let i = 0; i < orderedTaskIds.length; i++) {
+      
       const taskId = orderedTaskIds[i];
+      console.log(taskId, "taskId", i)
       await Task.findByIdAndUpdate(taskId, { order_ndex: i });
     }
 
