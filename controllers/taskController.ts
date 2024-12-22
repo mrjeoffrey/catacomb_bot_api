@@ -468,7 +468,7 @@ export const updateTask = async (req: Request, res: Response) => {
 
 export const updateTaskOrder = async (req: Request, res: Response) => {
   const { orderedTaskIds } = req.body;
-
+  console.log(orderedTaskIds, "orderedTaskIds")
   try {
     for (let i = 0; i < orderedTaskIds.length; i++) {
       
