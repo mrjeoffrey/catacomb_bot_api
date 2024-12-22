@@ -7,7 +7,7 @@ import Task from "../models/taskModel";
 import Settings from "../models/settingsModel";
 import { decodeBase64Image } from "../utils/decodeBase64Image";
 import User, { IUser } from "../models/userModel";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import axios from "axios";
 import { handleReferralRewards } from "./userController";
 
@@ -65,7 +65,7 @@ const upload = multer({
 
 export const getAllTasks = async (req: Request, res: Response) => {
   try {
-    const tasks = await Task.find().sort('order_index');
+    const tasks = await Task.find().sort("order_index");
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -127,13 +127,14 @@ export const createTask = async (req: Request, res: Response) => {
     // Save the task to the database
     await newTask.save();
 
-    res.status(201).json({ message: "Task created successfully", task: newTask });
+    res
+      .status(201)
+      .json({ message: "Task created successfully", task: newTask });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 //Task Proof
 export const taskProofingOrder = async (req: Request, res: Response) => {
@@ -160,8 +161,7 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
         return res.json({
           message: "You have already done this task.",
         });
-      }
-      else {
+      } else {
         // Telegram group check logic
         const chat_id = task.link.split("/").pop(); // Extract @group_name from the link
         const bot_token = task.group_bot_token;
@@ -202,7 +202,8 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
         await user.save();
 
         return res.json({
-          message: "Task validated successfully as the user is in the required group.",
+          message:
+            "Task validated successfully as the user is in the required group.",
         });
       }
     } else {
@@ -439,13 +440,28 @@ export const removingTaskfromUserTasksStatus = async (
 
 export const updateTask = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, gold_reward, xp_reward, link, is_tg_group_joining_check, group_bot_token } = req.body;
+  const {
+    name,
+    gold_reward,
+    xp_reward,
+    link,
+    is_tg_group_joining_check,
+    group_bot_token,
+  } = req.body;
   const avatar_url = req.file ? `/images/${req.file.filename}` : undefined;
 
   try {
     const task = await Task.findByIdAndUpdate(
       id,
-      { name, gold_reward, xp_reward, avatar_url, link, is_tg_group_joining_check, group_bot_token },
+      {
+        name,
+        gold_reward,
+        xp_reward,
+        avatar_url,
+        link,
+        is_tg_group_joining_check,
+        group_bot_token,
+      },
       { new: true, runValidators: true }
     );
 
@@ -468,13 +484,22 @@ export const updateTask = async (req: Request, res: Response) => {
 
 export const updateTaskOrder = async (req: Request, res: Response) => {
   const { orderedTaskIds } = req.body;
-  console.log(orderedTaskIds, "orderedTaskIds")
+  if (!Array.isArray(orderedTaskIds) || orderedTaskIds.length === 0) {
+    return res.status(400).json({ message: "Invalid task list" });
+  }
+
+  for (let i = 0; i < orderedTaskIds.length; i++) {
+    if (!Types.ObjectId.isValid(orderedTaskIds[i])) {
+      return res
+        .status(400)
+        .json({ message: `Invalid task ID: ${orderedTaskIds[i]}` });
+    }
+  }
+
   try {
     for (let i = 0; i < orderedTaskIds.length; i++) {
-      
       const taskId = orderedTaskIds[i];
-      console.log(taskId, "taskId", i)
-      await Task.findByIdAndUpdate(taskId, { order_ndex: i });
+      await Task.findByIdAndUpdate(taskId, { order_index: i });
     }
 
     res.json({ message: "Tasks reordered successfully" });

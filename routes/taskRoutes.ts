@@ -20,8 +20,9 @@ router.post("/proof-task", uploadImage, taskProofingOrder);
 router.post("/validate", validateTask);
 router.post("/check", checkTask);
 router.post("/remove_from_user", removingTaskfromUserTasksStatus);
+router.post("/reorder_task", updateTaskOrder);
 router.post("/:id", uploadAvatar, updateTask);
-router.post("/reorder", updateTaskOrder);
+
 router.get("/:id", removeTask);
 
 export default router;
