@@ -5,12 +5,13 @@ import {
   updateLevel,
   removeLevel,
 } from "../controllers/levelController";
+import { authenticateToken } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
-router.get("/", getAllLevels); // Get all levels
-router.post("/", createLevel); // Create a level
-router.put("/:id", updateLevel); // Update a level by ID
-router.delete("/:id", removeLevel); // Delete a level by ID
+router.get("/", getAllLevels);
+router.post("/", authenticateToken, createLevel);
+router.put("/:id", authenticateToken, updateLevel);
+router.delete("/:id", authenticateToken, removeLevel);
 
 export default router;
