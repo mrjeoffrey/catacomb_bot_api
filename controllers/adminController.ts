@@ -6,6 +6,7 @@ import Task from "../models/taskModel";
 import Settings from "../models/settingsModel";
 import Level from "../models/levelModel";
 import { JWT_SECRET } from "../config/config";
+import { isValidObjectId } from "mongoose";
 
 // Register Admin
 export const registerAdmin = async (req: Request, res: Response) => {
@@ -173,3 +174,37 @@ export const updateLevel = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const removeChestOpenedHistory = async (req: Request, res: Response) => {
+  const { userId, count } = req.body;
+
+  if (!isValidObjectId(userId)) {
+    return res.status(400).json({ message: "Invalid user ID" });
+  }
+  if (!Number.isInteger(count) || count <= 0) {
+    return res.status(400).json({ message: "Invalid count value" });
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const sortedHistory = user.chest_opened_history
+      .sort((a, b) => new Date(a.time_opened).getTime() - new Date(b.time_opened).getTime())
+      .slice(-count);
+
+    user.chest_opened_history = sortedHistory;
+    await user.save();
+
+    res.json({
+      message: "Chest opened history updated successfully",
+      remainingHistory: sortedHistory,
+    });
+  } catch (error) {
+    console.error("Error removing chest opened history:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
