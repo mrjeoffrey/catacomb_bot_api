@@ -197,8 +197,6 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
           validation_status: "validated", // Directly mark as validated
         });
 
-        user.gold += task.gold_reward;
-        user.xp += task.xp_reward;
         await user.save();
 
         return res.json({
@@ -364,9 +362,6 @@ export const validateTask = async (req: Request, res: Response) => {
         new: true,
       }
     );
-
-    user.gold += task.gold_reward;
-    user.xp += task.xp_reward;
 
     // Handle referral logic
     await handleReferralRewards(user, task.gold_reward);

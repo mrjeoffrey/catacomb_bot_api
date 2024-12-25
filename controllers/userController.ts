@@ -110,31 +110,7 @@ export const getUserById = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const { seasonStart, seasonEnd } = getCurrentSeason();
-    // Calculate the user's season XP and gold
-    const chestOpenedThisSeason = user.chest_opened_history.filter(
-      (entry) => entry.time_opened >= seasonStart && entry.time_opened <= seasonEnd
-    );
 
-    const seasonXP = chestOpenedThisSeason.reduce(
-      (sum, entry) => sum + entry.xp,
-      0
-    );
-
-    const seasonGold = chestOpenedThisSeason.reduce(
-      (sum, entry) => sum + entry.gold,
-      0
-    );
-
-    // Calculate valid referrals this month
-    const validReferralsThisSeason = user.valid_referrals.filter(
-      (referral) =>
-        referral.time_added >= seasonStart && referral.time_added <= seasonEnd
-    );
-    const additionalXP = validReferralsThisSeason.length * 100;
-
-    // Total season XP including referral XP
-    const totalSeasonXP = seasonXP + additionalXP;
 
     // Calculate user level and chest opening time
     const { level, seconds_for_next_chest_opening } = getUserLevel(user.xp);
@@ -171,8 +147,8 @@ export const getUserById = async (req: Request, res: Response) => {
     // Add the season_xp, season_gold, totalSeasonXP, rank, and valid referrals
     const userInfo = {
       ...userPlainObject,
-      season_xp: totalSeasonXP,
-      season_gold: seasonGold,
+      season_xp: user.current_season_xp,
+      season_gold: user.current_season_gold,
       level: level,
       seconds: seconds_for_next_chest_opening,
       remainingSeconds: remainingSeconds,
@@ -279,6 +255,63 @@ export const getUserInfo = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+        const startDate = new Date('2024-12-24');
+        const today = new Date();
+    
+        const chestOpenedThisPeriod = user.chest_opened_history.filter(
+          (entry) => entry.time_opened >= startDate && entry.time_opened <= today
+        );
+    
+        const totalChestXP = chestOpenedThisPeriod.reduce(
+          (sum, entry) => sum + entry.xp,
+          0
+        );
+    
+        const totalChestGold = chestOpenedThisPeriod.reduce(
+          (sum, entry) => sum + entry.gold,
+          0
+        );
+    
+       
+        const tasksDoneThisPeriod = user.task_done.filter(
+          (task) =>
+            task.validation_status === "validated" &&
+            task.completed_date >= startDate &&
+            task.completed_date <= today
+        );
+    
+        const tasksRewards = await Task.find({
+          _id: { $in: tasksDoneThisPeriod.map((task) => task.task_id) },
+        });
+    
+        const totalTaskXP = tasksRewards.reduce(
+          (sum, task) => sum + task.xp_reward,
+          0
+        );
+    
+        const totalTaskGold = tasksRewards.reduce(
+          (sum, task) => sum + task.gold_reward,
+          0
+        );
+    
+        // Combine XP and gold from chests and tasks
+        const totalXP = totalChestXP + totalTaskXP;
+        const totalGold = totalChestGold + totalTaskGold;
+    
+        // Calculate valid referrals this period (from 2024/12/24 to today)
+        const validReferralsThisPeriod = user.valid_referrals.filter(
+          (referral) =>
+            referral.time_added >= startDate && referral.time_added <= today
+        );
+    
+        const additionalXPFromReferrals = validReferralsThisPeriod.length * 100;
+    
+        // Total XP including referral XP
+        const totalXPWithReferrals = totalXP + additionalXPFromReferrals;
+
+        user.xp = totalXPWithReferrals;
+        user.gold = totalGold;
+
     const { seasonStart, seasonEnd } = getCurrentSeason();
     // Calculate the user's season XP and gold from chest opened history
     const chestOpenedThisSeason = user.chest_opened_history.filter(
@@ -338,7 +371,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
 
     await user.save();
     // Calculate user level and chest opening time
-    const { level, seconds_for_next_chest_opening } = getUserLevel(user.xp);
+    const { level, seconds_for_next_chest_opening } = getUserLevel(totalXPWithReferrals);
     const remainingSeconds = calculateChestOpeningTime(
       user,
       seconds_for_next_chest_opening
@@ -431,8 +464,7 @@ export const openChest = async (req: Request, res: Response) => {
     const golds = settings.opening_chest_earning.golds;
     const gold_reward = golds[Math.floor(Math.random() * golds.length)];
     const xp_reward = settings.opening_chest_earning.xp;
-    user.gold += gold_reward;
-    user.xp += xp_reward;
+
 
     // Add to chest opened history
     user.chest_opened_history.push({
@@ -447,8 +479,6 @@ export const openChest = async (req: Request, res: Response) => {
     await user.save();
     res.json({
       message: "Chest opened",
-      gold: gold_reward,
-      xp: xp_reward,
     });
   } catch (error) {
     console.error(error);
@@ -476,15 +506,11 @@ export const handleReferralRewards = async (user: IUser, gold_reward: number) =>
             id: user._id,
             time_added: new Date(),
           });
-          referrer.xp += 100;
         }
       }
-
       const referralGoldReward = Math.floor(
         (settings.referral_earning.gold_percentage / 100) * gold_reward
       );
-      referrer.gold += referralGoldReward;
-      referrer.xp += settings.referral_earning.xp;
       await referrer.save();
     }
   }
