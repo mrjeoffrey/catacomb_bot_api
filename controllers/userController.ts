@@ -414,7 +414,8 @@ export const openChest = async (req: Request, res: Response) => {
     // Check the last chest opened time and calculate if the user can open the chest
     const lastChestOpened = user.chest_opened_history[user.chest_opened_history.length - 1];
     const currentTime = new Date();
-    const timeSinceLastOpen = (currentTime.getTime() - new Date(lastChestOpened.time_opened).getTime()) / 1000; // in seconds
+    if(lastChestOpened.time_opened) console.log(lastChestOpened, "lastChestOpened");
+    const timeSinceLastOpen = (currentTime.getTime() - new Date(lastChestOpened?.time_opened).getTime()) / 1000; // in seconds
     if (timeSinceLastOpen < level.seconds_for_next_chest_opening) {
       const remainingTime = level.seconds_for_next_chest_opening - timeSinceLastOpen;
       return res.status(400).json({
