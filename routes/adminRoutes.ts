@@ -13,7 +13,7 @@ import { authenticateToken } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
-router.post("/register", registerAdmin);
+// router.post("/register", registerAdmin);
 router.post("/login", loginAdmin);
 router.post("/block-user", authenticateToken, blockUser);
 router.post("/remove-user", authenticateToken, removeUser);
