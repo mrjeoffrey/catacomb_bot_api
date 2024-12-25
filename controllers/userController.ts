@@ -404,34 +404,39 @@ export const openChest = async (req: Request, res: Response) => {
     if (!settings) {
       return res.status(500).json({ message: "Settings not found" });
     }
-    
+
     // Fetch user's level based on XP
     const level = await levelModel.findOne({ xp_required: { $lte: user.xp } }).sort({ level: -1 });
     if (!level) {
       return res.status(400).json({ message: "Level not found" });
     }
 
-    // Check the last chest opened time and calculate if the user can open the chest
-    const lastChestOpened = user.chest_opened_history[user.chest_opened_history.length - 1];
-    const currentTime = new Date();
-    if(!lastChestOpened.time_opened) console.log(lastChestOpened, "lastChestOpened");
-    const timeSinceLastOpen = (currentTime.getTime() - new Date(lastChestOpened?.time_opened).getTime()) / 1000; // in seconds
-    if (timeSinceLastOpen < level.seconds_for_next_chest_opening) {
-      const remainingTime = level.seconds_for_next_chest_opening - timeSinceLastOpen;
-      return res.status(400).json({
-        message: "Chest opening is not available yet. Please wait",
-        remainingTime,
-      });
+    // Check if user has opened any chest before
+    if (user.chest_opened_history && user.chest_opened_history.length > 0) {
+      // Get the last chest opened time
+      const lastChestOpened = user.chest_opened_history[user.chest_opened_history.length - 1];
+      const currentTime = new Date();
+      const timeSinceLastOpen = (currentTime.getTime() - new Date(lastChestOpened?.time_opened).getTime()) / 1000; // in seconds
+
+      if (timeSinceLastOpen < level.seconds_for_next_chest_opening) {
+        const remainingTime = level.seconds_for_next_chest_opening - timeSinceLastOpen;
+        return res.status(400).json({
+          message: "Chest opening is not available yet. Please wait",
+          remainingTime,
+        });
+      }
     }
 
+    // Rewards logic
     const golds = settings.opening_chest_earning.golds;
     const gold_reward = golds[Math.floor(Math.random() * golds.length)];
     const xp_reward = settings.opening_chest_earning.xp;
     user.gold += gold_reward;
     user.xp += xp_reward;
 
+    // Add to chest opened history
     user.chest_opened_history.push({
-      time_opened: currentTime,
+      time_opened: new Date(),
       xp: xp_reward,
       gold: gold_reward,
     });
