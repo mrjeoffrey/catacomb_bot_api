@@ -178,9 +178,10 @@ export const updateLevel = async (req: Request, res: Response) => {
 export const removeChestOpenedHistory = async (req: Request, res: Response) => {
   const { telegram_id, count } = req.body;
   console.log(telegram_id, count, "telegram_id, count");
-
-  if (!Number.isInteger(count) || count <= 0) {
-    return res.status(400).json({ message: "Invalid count value" });
+  const parsedCount = parseInt(count, 10);
+  
+  if (isNaN(parsedCount) || parsedCount <= 0) {
+    return res.status(400).json({ message: "Invalid parsedCount value" });
   }
 
   try {
@@ -191,7 +192,7 @@ export const removeChestOpenedHistory = async (req: Request, res: Response) => {
 
     const sortedHistory = user.chest_opened_history
       .sort((a, b) => new Date(a.time_opened).getTime() - new Date(b.time_opened).getTime())
-      .slice(-count);
+      .slice(-parsedCount);
 
     user.chest_opened_history = sortedHistory;
     await user.save();
