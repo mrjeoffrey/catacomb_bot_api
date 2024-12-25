@@ -176,17 +176,15 @@ export const updateLevel = async (req: Request, res: Response) => {
 };
 
 export const removeChestOpenedHistory = async (req: Request, res: Response) => {
-  const { userId, count } = req.body;
+  const { telegram_id, count } = req.body;
+  console.log(telegram_id, count, "telegram_id, count");
 
-  if (!isValidObjectId(userId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
   if (!Number.isInteger(count) || count <= 0) {
     return res.status(400).json({ message: "Invalid count value" });
   }
 
   try {
-    const user = await User.findById(userId);
+     const user = await User.findOne({ telegram_id });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
