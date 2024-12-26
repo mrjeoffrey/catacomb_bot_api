@@ -304,7 +304,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
             referral.time_added >= startDate && referral.time_added <= today
         );
     
-        const additionalXPFromReferrals = validReferralsThisPeriod.length * 100;
+        const additionalXPFromReferrals = validReferralsThisPeriod.length * 50;
     
         // Total XP including referral XP
         const totalXPWithReferrals = totalXP + additionalXPFromReferrals;
@@ -361,7 +361,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
         referral.time_added >= seasonStart && referral.time_added <= seasonEnd
     );
 
-    const additionalXP = validReferralsThisMonth.length * 100;
+    const additionalXP = validReferralsThisMonth.length * 50;
 
     // Total season XP including referral XP
     const totalSeasonXP = seasonXP + additionalXP;
@@ -510,9 +510,6 @@ export const handleReferralRewards = async (user: IUser, gold_reward: number) =>
           });
         }
       }
-      const referralGoldReward = Math.floor(
-        (settings.referral_earning.gold_percentage / 100) * gold_reward
-      );
       await referrer.save();
     }
   }

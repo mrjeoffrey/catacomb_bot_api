@@ -106,23 +106,6 @@ export const editTask = async (req: Request, res: Response) => {
   }
 };
 
-// Update Settings
-export const updateSettings = async (req: Request, res: Response) => {
-  const { opening_chest_earning, referral_earning } = req.body;
-
-  try {
-    const settings = await Settings.findOneAndUpdate(
-      {},
-      { opening_chest_earning, referral_earning },
-      { new: true, upsert: true }
-    );
-
-    res.json({ message: "Settings updated successfully", settings });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
 // Insert Level
 export const insertLevel = async (req: Request, res: Response) => {
   const {

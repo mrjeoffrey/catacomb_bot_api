@@ -4,7 +4,7 @@ import {
   loginAdmin,
   blockUser,
   editTask,
-  updateSettings,
+  // updateSettings,
   insertLevel,
   updateLevel,
   removeUser,
@@ -20,7 +20,7 @@ router.post("/block-user", authenticateToken, blockUser);
 router.post("/remove-chesthistory", authenticateToken, removeChestOpenedHistory);
 router.post("/remove-user", authenticateToken, removeUser);
 router.put("/edit-task", authenticateToken, editTask);
-router.put("/update-settings", authenticateToken, updateSettings);
+// router.put("/update-settings", authenticateToken, updateSettings);
 router.post("/insert-level", authenticateToken, insertLevel);
 router.put("/update-level", authenticateToken, updateLevel);
 
