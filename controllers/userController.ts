@@ -479,6 +479,8 @@ export const openChest = async (req: Request, res: Response) => {
     await user.save();
     res.json({
       message: "Chest opened",
+      gold: gold_reward,
+      xp: xp_reward,
     });
   } catch (error) {
     console.error(error);
