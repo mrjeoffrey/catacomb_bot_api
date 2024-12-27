@@ -10,6 +10,7 @@ import levelModel from "../models/levelModel";
 // Get All Users
 export const getUsers = async (req: Request, res: Response) => {
   try {
+    // Fetch all users and populate necessary fields
     const users = await User.find()
       .populate({
         path: "referred_by",
@@ -19,14 +20,28 @@ export const getUsers = async (req: Request, res: Response) => {
         path: "task_done.task_id",
         select: "name link avatar_url gold_reward xp_reward",
       });
-    if (!users) {
+
+    if (!users || users.length === 0) {
       return res.status(404).json({ message: "Users not found" });
     }
-    res.json(users);
+
+    // Add referred_by_count for each user
+    const usersWithReferralCount = await Promise.all(
+      users.map(async (user) => {
+        const referralCount = await User.countDocuments({ referred_by: user._id });
+        return {
+          ...user.toObject(), // Convert Mongoose document to plain object
+          referralCount,
+        };
+      })
+    );
+
+    res.json(usersWithReferralCount);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error });
   }
 };
+
 
 const getCurrentSeason = () => {
   const now = new Date();

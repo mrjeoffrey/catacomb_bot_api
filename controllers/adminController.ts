@@ -38,7 +38,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
     }
 
     const token = jwt.sign({ email: admin.email }, JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "7d",
     });
     res.json({ token });
   } catch (error) {
