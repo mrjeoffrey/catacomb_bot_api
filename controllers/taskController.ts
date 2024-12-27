@@ -79,7 +79,7 @@ export const createTask = async (req: Request, res: Response) => {
     xp_reward,
     link,
     avatar_url,
-    is_tg_group_joining_check,
+    is_auto_check,
     group_bot_token,
   } = req.body;
 
@@ -120,8 +120,8 @@ export const createTask = async (req: Request, res: Response) => {
       xp_reward,
       link,
       avatar_url: savedFilePath,
-      is_tg_group_joining_check: is_tg_group_joining_check || false,
-      group_bot_token: group_bot_token || "",
+      is_auto_check: is_auto_check || false,
+      group_bot_token: group_bot_token || null,
     });
 
     // Save the task to the database
@@ -152,7 +152,7 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (task.is_tg_group_joining_check && task.group_bot_token) {
+    if (task.is_auto_check) {
       const existingTask = user.task_done.find(
         (task) => task.task_id.toString() === task_id
       );
@@ -163,46 +163,68 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
         });
       } else {
         // Telegram group check logic
-        const chat_id = task.link.split("/").pop(); // Extract @group_name from the link
-        const bot_token = task.group_bot_token;
+        if (task.group_bot_token) {
+          const chat_id = task.link.split("/").pop(); // Extract @group_name from the link
+          const bot_token = task.group_bot_token || null;
 
-        const response = await axios.get(
-          `https://api.telegram.org/bot${bot_token}/getChatMember`,
-          {
-            params: {
-              chat_id: `@${chat_id}`,
-              user_id: telegram_id,
-            },
+          const response = await axios.get(
+            `https://api.telegram.org/bot${bot_token}/getChatMember`,
+            {
+              params: {
+                chat_id: `@${chat_id}`,
+                user_id: telegram_id,
+              },
+            }
+          );
+
+          const chatMember = response.data;
+
+          if (!chatMember.ok || chatMember.result.status === "left") {
+            return res.status(400).json({
+              message: "User is not a member of the required Telegram group.",
+            });
           }
-        );
 
-        const chatMember = response.data;
+          // Handle referral logic
+          await handleReferralRewards(user, task.gold_reward);
+          await user.save();
 
-        if (!chatMember.ok || chatMember.result.status === "left") {
-          return res.status(400).json({
-            message: "User is not a member of the required Telegram group.",
+          // If user is in the group, directly validate the task
+          user.task_done.push({
+            task_id,
+            proof_img: "", // No proof image needed
+            proof_url: url || "", // Optional proof URL
+            completed_date: new Date(),
+            validation_status: "validated", // Directly mark as validated
+          });
+
+          await user.save();
+
+          return res.json({
+            message:
+              "Task validated successfully as the user is in the required group.",
+          });
+        } else {
+          //Just auto checking
+          // Handle referral logic
+          await handleReferralRewards(user, task.gold_reward);
+          await user.save();
+
+          // If user request validate, directly validate the task
+          user.task_done.push({
+            task_id,
+            proof_img: "", // No proof image needed
+            proof_url: url || "", // Optional proof URL
+            completed_date: new Date(),
+            validation_status: "validated", // Directly mark as validated
+          });
+
+          await user.save();
+
+          return res.json({
+            message: "Task validated successfully as the user checked task.",
           });
         }
-
-        // Handle referral logic
-        await handleReferralRewards(user, task.gold_reward);
-        await user.save();
-
-        // If user is in the group, directly validate the task
-        user.task_done.push({
-          task_id,
-          proof_img: "", // No proof image needed
-          proof_url: url || "", // Optional proof URL
-          completed_date: new Date(),
-          validation_status: "validated", // Directly mark as validated
-        });
-
-        await user.save();
-
-        return res.json({
-          message:
-            "Task validated successfully as the user is in the required group.",
-        });
       }
     } else {
       // Proof image handling for non-Telegram group tasks
@@ -435,14 +457,8 @@ export const removingTaskfromUserTasksStatus = async (
 
 export const updateTask = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const {
-    name,
-    gold_reward,
-    xp_reward,
-    link,
-    is_tg_group_joining_check,
-    group_bot_token,
-  } = req.body;
+  const { name, gold_reward, xp_reward, link, is_auto_check, group_bot_token } =
+    req.body;
   const avatar_url = req.file ? `/images/${req.file.filename}` : undefined;
 
   try {
@@ -454,8 +470,8 @@ export const updateTask = async (req: Request, res: Response) => {
         xp_reward,
         avatar_url,
         link,
-        is_tg_group_joining_check,
-        group_bot_token,
+        is_auto_check,
+        group_bot_token: group_bot_token || null,
       },
       { new: true, runValidators: true }
     );
