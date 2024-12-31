@@ -440,7 +440,6 @@ export const getUserInfo = async (req: Request, res: Response) => {
         (a, b) =>
           new Date(b.time_added).getTime() - new Date(a.time_added).getTime()
       )
-      .slice(0, 5)
       .map((referral) => {
         if (referral.id) {
           const referralData = referral.id as any;
