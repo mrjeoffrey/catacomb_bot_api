@@ -10,38 +10,77 @@ import levelModel from "../models/levelModel";
 // Get All Users
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    // Fetch all users and populate necessary fields
-    const users = await User.find()
-      .populate({
-        path: "referred_by",
-        select: "username _id telegram_id",
-      })
-      .populate({
-        path: "task_done.task_id",
-        select: "name link avatar_url gold_reward xp_reward",
-      });
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const size = parseInt(req.query.size as string, 10) || 30;
+    const sortField = (req.query.sortField as string) || "created_at";
+    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
 
-    if (!users || users.length === 0) {
-      return res.status(404).json({ message: "Users not found" });
+    let users: IUser[];
+
+    if (sortField === "task_done_length") {
+      // Sorting by array length requires aggregation
+      users = await User.aggregate([
+        {
+          $addFields: {
+            task_done_length: { $size: "$task_done" },
+          },
+        },
+        {
+          $sort: { task_done_length: sortOrder },
+        },
+        { $skip: (page - 1) * size },
+        { $limit: size },
+      ]);
+    } else {
+      // Regular query with sorting
+      users = await User.find()
+        .populate({
+          path: "referred_by",
+          select: "username _id telegram_id",
+        })
+        .populate({
+          path: "task_done.task_id",
+          select: "name link avatar_url gold_reward xp_reward",
+        })
+        .sort({ [sortField]: sortOrder })
+        .skip((page - 1) * size)
+        .limit(size);
     }
 
-    // Add referred_by_count for each user
+    // Add referral count and other computed fields
     const usersWithReferralCount = await Promise.all(
       users.map(async (user) => {
-        const referralCount = await User.countDocuments({ referred_by: user._id });
+        const referralCount = await User.countDocuments({
+          referred_by: user._id,
+        });
+        const validatedTaskCount = user.task_done.filter(
+          (task) => task.validation_status === "validated"
+        ).length;
+
         return {
-          ...user.toObject(), // Convert Mongoose document to plain object
+          ...user.toObject(),
           referralCount,
+          validatedTaskCount,
         };
       })
     );
 
-    res.json(usersWithReferralCount);
+    const totalUsers = await User.countDocuments();
+    const totalPages = Math.ceil(totalUsers / size);
+
+    res.json({
+      users: usersWithReferralCount,
+      meta: {
+        totalUsers,
+        page,
+        size,
+        totalPages,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };
-
 
 const getCurrentSeason = () => {
   const now = new Date();
@@ -52,15 +91,18 @@ const getCurrentSeason = () => {
   let seasonStart, seasonEnd;
 
   // Special case for the first season: December 20, 2024, to January 14, 2025
-  if ((year === 2024 && month === 11 && day >= 20) || (year === 2025 && month === 0 && day <= 14)) {
+  if (
+    (year === 2024 && month === 11 && day >= 20) ||
+    (year === 2025 && month === 0 && day <= 14)
+  ) {
     seasonStart = new Date(2024, 11, 20); // December 20, 2024
-    seasonEnd = new Date(2025, 0, 14);   // January 14, 2025
+    seasonEnd = new Date(2025, 0, 14); // January 14, 2025
   } else {
     // General rule for seasons
     if (day <= 14) {
       // First half of the month
-      seasonStart = new Date(year, month, 1);  // 1st of the current month
-      seasonEnd = new Date(year, month, 14);  // 14th of the current month
+      seasonStart = new Date(year, month, 1); // 1st of the current month
+      seasonEnd = new Date(year, month, 14); // 14th of the current month
     } else {
       // Second half of the month
       seasonStart = new Date(year, month, 15); // 15th of the current month
@@ -69,7 +111,7 @@ const getCurrentSeason = () => {
   }
 
   return { seasonStart, seasonEnd };
-}
+};
 
 const getRankings = async (current_user: IUser) => {
   // Retrieve all user rankings, comparing current_season_xp and current_season_gold
@@ -102,7 +144,6 @@ const getRankings = async (current_user: IUser) => {
   return { rankings: topRankings, currentUserRank: currentUserRanking?.rank };
 };
 
-
 // Get User Info
 export const getUserById = async (req: Request, res: Response) => {
   const { id } = req.body;
@@ -125,7 +166,6 @@ export const getUserById = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
 
     // Calculate user level and chest opening time
     const { level, seconds_for_next_chest_opening } = getUserLevel(user.xp);
@@ -167,7 +207,7 @@ export const getUserById = async (req: Request, res: Response) => {
       level: level,
       seconds: seconds_for_next_chest_opening,
       remainingSeconds: remainingSeconds,
-      rankings:rankings,
+      rankings: rankings,
       rank: currentUserRank,
       valid_referrals: validReferrals,
     };
@@ -188,7 +228,7 @@ export const createUser = async (req: Request, res: Response) => {
     referral_code,
     location,
   } = req.body;
-  
+
   try {
     const existingUser = await User.findOne({ telegram_id });
     if (existingUser) {
@@ -270,67 +310,67 @@ export const getUserInfo = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-        const startDate = new Date('2024-12-24');
-        const today = new Date();
-    
-        const chestOpenedThisPeriod = user.chest_opened_history.filter(
-          (entry) => entry.time_opened >= startDate && entry.time_opened <= today
-        );
-    
-        const totalChestXP = chestOpenedThisPeriod.reduce(
-          (sum, entry) => sum + entry.xp,
-          0
-        );
-    
-        const totalChestGold = chestOpenedThisPeriod.reduce(
-          (sum, entry) => sum + entry.gold,
-          0
-        );
-    
-       
-        const tasksDoneThisPeriod = user.task_done.filter(
-          (task) =>
-            task.validation_status === "validated" &&
-            task.completed_date >= startDate &&
-            task.completed_date <= today
-        );
-    
-        const tasksRewards = await Task.find({
-          _id: { $in: tasksDoneThisPeriod.map((task) => task.task_id) },
-        });
-    
-        const totalTaskXP = tasksRewards.reduce(
-          (sum, task) => sum + task.xp_reward,
-          0
-        );
-    
-        const totalTaskGold = tasksRewards.reduce(
-          (sum, task) => sum + task.gold_reward,
-          0
-        );
-    
-        // Combine XP and gold from chests and tasks
-        const totalXP = totalChestXP + totalTaskXP;
-        const totalGold = totalChestGold + totalTaskGold;
-    
-        // Calculate valid referrals this period (from 2024/12/24 to today)
-        const validReferralsThisPeriod = user.valid_referrals.filter(
-          (referral) =>
-            referral.time_added >= startDate && referral.time_added <= today
-        );
-    
-        const additionalXPFromReferrals = validReferralsThisPeriod.length * 50;
-    
-        // Total XP including referral XP
-        const totalXPWithReferrals = totalXP + additionalXPFromReferrals;
+    const startDate = new Date("2024-12-24");
+    const today = new Date();
 
-        user.xp = totalXPWithReferrals;
-        user.gold = totalGold;
+    const chestOpenedThisPeriod = user.chest_opened_history.filter(
+      (entry) => entry.time_opened >= startDate && entry.time_opened <= today
+    );
+
+    const totalChestXP = chestOpenedThisPeriod.reduce(
+      (sum, entry) => sum + entry.xp,
+      0
+    );
+
+    const totalChestGold = chestOpenedThisPeriod.reduce(
+      (sum, entry) => sum + entry.gold,
+      0
+    );
+
+    const tasksDoneThisPeriod = user.task_done.filter(
+      (task) =>
+        task.validation_status === "validated" &&
+        task.completed_date >= startDate &&
+        task.completed_date <= today
+    );
+
+    const tasksRewards = await Task.find({
+      _id: { $in: tasksDoneThisPeriod.map((task) => task.task_id) },
+    });
+
+    const totalTaskXP = tasksRewards.reduce(
+      (sum, task) => sum + task.xp_reward,
+      0
+    );
+
+    const totalTaskGold = tasksRewards.reduce(
+      (sum, task) => sum + task.gold_reward,
+      0
+    );
+
+    // Combine XP and gold from chests and tasks
+    const totalXP = totalChestXP + totalTaskXP;
+    const totalGold = totalChestGold + totalTaskGold;
+
+    // Calculate valid referrals this period (from 2024/12/24 to today)
+    const validReferralsThisPeriod = user.valid_referrals.filter(
+      (referral) =>
+        referral.time_added >= startDate && referral.time_added <= today
+    );
+
+    const additionalXPFromReferrals = validReferralsThisPeriod.length * 50;
+
+    // Total XP including referral XP
+    const totalXPWithReferrals = totalXP + additionalXPFromReferrals;
+
+    user.xp = totalXPWithReferrals;
+    user.gold = totalGold;
 
     const { seasonStart, seasonEnd } = getCurrentSeason();
     // Calculate the user's season XP and gold from chest opened history
     const chestOpenedThisSeason = user.chest_opened_history.filter(
-      (entry) => entry.time_opened >= seasonStart && entry.time_opened <= seasonEnd
+      (entry) =>
+        entry.time_opened >= seasonStart && entry.time_opened <= seasonEnd
     );
 
     const chestSeasonXP = chestOpenedThisSeason.reduce(
@@ -342,7 +382,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
       (sum, entry) => sum + entry.gold,
       0
     );
-   
+
     // Calculate XP and gold from validated tasks done this season
     const tasksDoneThisSeason = user.task_done.filter(
       (task) =>
@@ -386,7 +426,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
 
     await user.save();
     // Calculate user level and chest opening time
-    const { level, seconds_for_next_chest_opening } = getUserLevel(totalXPWithReferrals);
+    const { level, seconds_for_next_chest_opening } =
+      getUserLevel(totalXPWithReferrals);
     const remainingSeconds = calculateChestOpeningTime(
       user,
       seconds_for_next_chest_opening
@@ -411,7 +452,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
           };
         }
       });
-    
+
     const { rankings, currentUserRank } = await getRankings(user);
     // Convert the Mongoose document to a plain JavaScript object
     const userPlainObject = user.toObject();
@@ -454,7 +495,9 @@ export const openChest = async (req: Request, res: Response) => {
     }
 
     // Fetch user's level based on XP
-    const level = await levelModel.findOne({ xp_required: { $lte: user.xp } }).sort({ level: -1 });
+    const level = await levelModel
+      .findOne({ xp_required: { $lte: user.xp } })
+      .sort({ level: -1 });
     if (!level) {
       return res.status(400).json({ message: "Level not found" });
     }
@@ -462,12 +505,17 @@ export const openChest = async (req: Request, res: Response) => {
     // Check if user has opened any chest before
     if (user.chest_opened_history && user.chest_opened_history.length > 0) {
       // Get the last chest opened time
-      const lastChestOpened = user.chest_opened_history[user.chest_opened_history.length - 1];
+      const lastChestOpened =
+        user.chest_opened_history[user.chest_opened_history.length - 1];
       const currentTime = new Date();
-      const timeSinceLastOpen = (currentTime.getTime() - new Date(lastChestOpened?.time_opened).getTime()) / 1000; // in seconds
+      const timeSinceLastOpen =
+        (currentTime.getTime() -
+          new Date(lastChestOpened?.time_opened).getTime()) /
+        1000; // in seconds
 
       if (timeSinceLastOpen < level.seconds_for_next_chest_opening) {
-        const remainingTime = level.seconds_for_next_chest_opening - timeSinceLastOpen;
+        const remainingTime =
+          level.seconds_for_next_chest_opening - timeSinceLastOpen;
         return res.status(400).json({
           message: "Chest opening is not available yet. Please wait",
           remainingTime,
@@ -479,7 +527,6 @@ export const openChest = async (req: Request, res: Response) => {
     const golds = settings.opening_chest_earning.golds;
     const gold_reward = golds[Math.floor(Math.random() * golds.length)];
     const xp_reward = settings.opening_chest_earning.xp;
-
 
     // Add to chest opened history
     user.chest_opened_history.push({
@@ -503,8 +550,10 @@ export const openChest = async (req: Request, res: Response) => {
   }
 };
 
-
-export const handleReferralRewards = async (user: IUser, gold_reward: number) => {
+export const handleReferralRewards = async (
+  user: IUser,
+  gold_reward: number
+) => {
   if (user.referred_by) {
     const settings = await Settings.findOne();
     if (!settings) {
@@ -513,8 +562,8 @@ export const handleReferralRewards = async (user: IUser, gold_reward: number) =>
 
     const referrer = await User.findById(user.referred_by);
     if (referrer) {
-      const isAlreadyValidReferral = referrer.valid_referrals.some(
-        (referral) => referral.id.equals(user._id)
+      const isAlreadyValidReferral = referrer.valid_referrals.some((referral) =>
+        referral.id.equals(user._id)
       );
 
       if (!isAlreadyValidReferral) {
