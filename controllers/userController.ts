@@ -8,7 +8,42 @@ import { isValidObjectId } from "mongoose";
 import levelModel from "../models/levelModel";
 
 // Get All Users
-export const getUsers = async (req: Request, res: Response) => {
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    // Fetch all users and populate necessary fields
+    const users = await User.find()
+      .populate({
+        path: "referred_by",
+        select: "username _id telegram_id",
+      })
+      .populate({
+        path: "task_done.task_id",
+        select: "name link avatar_url gold_reward xp_reward",
+      });
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: "Users not found" });
+    }
+
+    // Add referred_by_count for each user
+    const usersWithReferralCount = await Promise.all(
+      users.map(async (user) => {
+        const referralCount = await User.countDocuments({ referred_by: user._id });
+        return {
+          ...user.toObject(), // Convert Mongoose document to plain object
+          referralCount,
+        };
+      })
+    );
+
+    res.json(usersWithReferralCount);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+//Get Users By Pagination and filtering
+export const getUsersByPaginationAndFiltering = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string, 10) || 1;
     const size = parseInt(req.query.size as string, 10) || 30;
