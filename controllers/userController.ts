@@ -50,11 +50,21 @@ export const getUsersByPaginationAndFiltering = async (req: Request, res: Respon
     const sortField = (req.query.sortField as string) || "created_at";
     const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
 
+    // Search filter for username
+    const searchValue = req.query.search_value as string;
+    const searchFilter: any = {};
+    if (searchValue) {
+      searchFilter.username = { $regex: searchValue, $options: "i" }; // Case-insensitive regex match
+    }
+
     let users: IUser[];
 
     if (sortField === "task_done_length") {
       // Sorting by array length requires aggregation
       users = await User.aggregate([
+        {
+          $match: searchFilter,
+        },
         {
           $addFields: {
             task_done_length: { $size: "$task_done" },
@@ -67,8 +77,8 @@ export const getUsersByPaginationAndFiltering = async (req: Request, res: Respon
         { $limit: size },
       ]);
     } else {
-      // Regular query with sorting
-      users = await User.find()
+      // Regular query with sorting and filtering
+      users = await User.find(searchFilter)
         .populate({
           path: "referred_by",
           select: "username _id telegram_id",
@@ -100,7 +110,7 @@ export const getUsersByPaginationAndFiltering = async (req: Request, res: Respon
       })
     );
 
-    const totalUsers = await User.countDocuments();
+    const totalUsers = await User.countDocuments(searchFilter);
     const totalPages = Math.ceil(totalUsers / size);
 
     res.json({
@@ -116,6 +126,7 @@ export const getUsersByPaginationAndFiltering = async (req: Request, res: Respon
     res.status(500).json({ message: "Server error", error });
   }
 };
+
 
 const getCurrentSeason = () => {
   const now = new Date();
