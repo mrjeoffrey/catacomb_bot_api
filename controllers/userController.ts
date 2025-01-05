@@ -53,8 +53,8 @@ export const getUsersByPaginationAndFiltering = async (req: Request, res: Respon
     // Search filter for username
     const searchValue = req.query.search_value as string;
     const searchFilter: any = {};
-    if (searchValue) {
-      searchFilter.username = { $regex: searchValue, $options: "i" }; // Case-insensitive regex match
+    if (searchValue && searchValue.trim() !== "") {
+      searchFilter.username = { $regex: searchValue.trim(), $options: "i" }; // Case-insensitive regex match
     }
 
     let users: IUser[];
@@ -126,6 +126,7 @@ export const getUsersByPaginationAndFiltering = async (req: Request, res: Respon
     res.status(500).json({ message: "Server error", error });
   }
 };
+
 
 
 const getCurrentSeason = () => {
