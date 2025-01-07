@@ -13,7 +13,7 @@ export const getSettings = async (req: Request, res: Response) => {
 
 // Update Settings
 export const updateSettings = async (req: Request, res: Response) => {
-  const { opening_chest_earning, referral_earning } = req.body;
+  const { opening_chest_earning, referral_earning, daily_opening_chests_limit } = req.body;
 
   try {
     const updatedSettings = await Settings.findOneAndUpdate(
@@ -22,6 +22,7 @@ export const updateSettings = async (req: Request, res: Response) => {
         $set: {
           opening_chest_earning,
           referral_earning,
+          daily_opening_chests_limit
         },
       },
       { new: true }
