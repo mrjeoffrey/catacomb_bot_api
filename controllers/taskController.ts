@@ -79,7 +79,41 @@ export const getAllTasks = async (req: Request, res: Response) => {
 
 export const getAllLimitedAndUnlimitedTasks = async (req: Request, res: Response) => {
   try {
-    const tasks = await Task.find().sort("order_index");
+    const tasks = await Task.aggregate([
+      {
+        $lookup: {
+          from: "users", // MongoDB collection name for the User model
+          let: { taskId: "$_id" },
+          pipeline: [
+            { $unwind: "$task_done" },
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$task_done.task_id", "$$taskId"] },
+                    { $eq: ["$task_done.validation_status", "validated"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "validated_users",
+        },
+      },
+      {
+        $addFields: {
+          validated_count: { $size: "$validated_users" },
+        },
+      },
+      {
+        $project: {
+          validated_users: 0, // Exclude validated_users details from the result
+        },
+      },
+      {
+        $sort: { order_index: 1 },
+      },
+    ]);
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
