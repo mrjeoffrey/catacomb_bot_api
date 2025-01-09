@@ -236,17 +236,6 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
             });
           }
 
-          console.log("11111111111",task?.cashtag_for_username)
-          console.log("2222222222",chatMember.result.user)
-          console.log("3333333",chatMember.result.user.first_name)
-          console.log("444444444",chatMember.result.user.last_name)
-          console.log("5555555555555", chatMember.result.user.first_name.includes(task?.cashtag_for_username))
-
-
-          console.log("++++++++++++++", task?.cashtag_for_username,chatMember.result.user.first_name.includes(task?.cashtag_for_username) 
-          , chatMember.result.user.first_name.includes(task?.cashtag_for_username) 
-          || (chatMember.result.user.last_name && chatMember.result.user.last_name.includes(task?.cashtag_for_username)))
-
           if (task?.cashtag_for_username && task?.cashtag_for_username !== "") {
             if ((chatMember.result.user.first_name && chatMember.result.user.first_name.includes(task?.cashtag_for_username))
               || (chatMember.result.user.last_name && chatMember.result.user.last_name.includes(task?.cashtag_for_username))) {
