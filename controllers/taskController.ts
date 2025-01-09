@@ -129,6 +129,7 @@ export const createTask = async (req: Request, res: Response) => {
     avatar_url,
     is_auto_check,
     group_bot_token,
+    cashtag_for_username,
   } = req.body;
 
   let savedFilePath = "";
@@ -170,6 +171,7 @@ export const createTask = async (req: Request, res: Response) => {
       avatar_url: savedFilePath,
       is_auto_check: is_auto_check || false,
       group_bot_token: group_bot_token || null,
+      cashtag_for_username: cashtag_for_username || null,
     });
 
     // Save the task to the database
