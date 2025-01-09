@@ -64,6 +64,15 @@ const upload = multer({
 
 export const getAllTasks = async (req: Request, res: Response) => {
   try {
+    const tasks = await Task.find({ is_limited: false }).sort("order_index");
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getAllLimitedAndUnlimitedTasks = async (req: Request, res: Response) => {
+  try {
     const tasks = await Task.find().sort("order_index");
     res.json(tasks);
   } catch (error) {
@@ -178,31 +187,60 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
 
           const chatMember = response.data;
 
+
           if (!chatMember.ok || chatMember.result.status === "left") {
             return res.status(400).json({
               message: "User is not a member of the required Telegram group.",
             });
           }
+          if (task?.cashtag_for_username && task?.cashtag_for_username !== "") {
+            if (chatMember.result.user.first_name.includes(task?.cashtag_for_username) 
+              || chatMember.result.user.last_name.includes(task?.cashtag_for_username)) {
+              await handleReferralRewards(user, task.gold_reward);
+              await user.save();
 
-          // Handle referral logic
-          await handleReferralRewards(user, task.gold_reward);
-          await user.save();
+              // If user is in the group & has specific cashtag at his username, directly validate the task
+              user.task_done.push({
+                task_id,
+                proof_img: "", // No proof image needed
+                proof_url: url || "", // Optional proof URL
+                completed_date: new Date(),
+                validation_status: "validated", // Directly mark as validated
+              });
 
-          // If user is in the group, directly validate the task
-          user.task_done.push({
-            task_id,
-            proof_img: "", // No proof image needed
-            proof_url: url || "", // Optional proof URL
-            completed_date: new Date(),
-            validation_status: "validated", // Directly mark as validated
-          });
+              await user.save();
 
-          await user.save();
+              return res.json({
+                message:
+                  "Task validated successfully as the user has cashtag in User Name.",
+              });
+            } else {
+              return res.status(400).json({
+                message: "User hasnt got cashtag in User Name.",
+              });
+            }
+          } else {
+            // Handle referral logic
+            await handleReferralRewards(user, task.gold_reward);
+            await user.save();
 
-          return res.json({
-            message:
-              "Task validated successfully as the user is in the required group.",
-          });
+            // If user is in the group, directly validate the task
+            user.task_done.push({
+              task_id,
+              proof_img: "", // No proof image needed
+              proof_url: url || "", // Optional proof URL
+              completed_date: new Date(),
+              validation_status: "validated", // Directly mark as validated
+            });
+
+            await user.save();
+
+            return res.json({
+              message:
+                "Task validated successfully as the user is in the required group.",
+            });
+          }
+
         } else {
           //Just auto checking
           // Handle referral logic
@@ -456,7 +494,7 @@ export const removingTaskfromUserTasksStatus = async (
 
 export const updateTask = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, gold_reward, xp_reward, link, is_auto_check, group_bot_token } =
+  const { name, gold_reward, xp_reward, link, is_auto_check, group_bot_token, cashtag_for_username, is_limited } =
     req.body;
   const avatar_url = req.file ? `/images/${req.file.filename}` : undefined;
 
@@ -470,7 +508,9 @@ export const updateTask = async (req: Request, res: Response) => {
         avatar_url,
         link,
         is_auto_check,
+        is_limited: is_limited || false,
         group_bot_token: group_bot_token || null,
+        cashtag_for_username: cashtag_for_username || null
       },
       { new: true, runValidators: true }
     );

@@ -11,11 +11,13 @@ import {
   checkTask,
   removingTaskfromUserTasksStatus,
   updateTaskOrder,
+  getAllLimitedAndUnlimitedTasks,
 } from "../controllers/taskController";
 import { authenticateToken } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 router.get("/", getAllTasks);
+router.get("/all",authenticateToken, getAllLimitedAndUnlimitedTasks);
 router.post("/create", authenticateToken, uploadAvatar, createTask);
 router.post("/proof-task", uploadImage, taskProofingOrder);
 router.post("/validate", authenticateToken, validateTask);
