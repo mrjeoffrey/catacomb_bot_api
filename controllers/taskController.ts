@@ -64,7 +64,13 @@ const upload = multer({
 
 export const getAllTasks = async (req: Request, res: Response) => {
   try {
-    const tasks = await Task.find({ is_limited: false }).sort("order_index");
+    const tasks = await Task.find({
+      $or: [
+        { is_limited: false },
+        { is_limited: null },
+        { is_limited: { $exists: false } },
+      ],
+    }).sort("order_index");
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
