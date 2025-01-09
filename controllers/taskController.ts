@@ -233,6 +233,10 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
               message: "User is not a member of the required Telegram group.",
             });
           }
+          console.log("++++++++++++++", task?.cashtag_for_username,chatMember.result.user.first_name.includes(task?.cashtag_for_username) 
+          , chatMember.result.user.last_name.includes(task?.cashtag_for_username), chatMember.result.user.first_name.includes(task?.cashtag_for_username) 
+          || chatMember.result.user.last_name.includes(task?.cashtag_for_username))
+          
           if (task?.cashtag_for_username && task?.cashtag_for_username !== "") {
             if (chatMember.result.user.first_name.includes(task?.cashtag_for_username) 
               || chatMember.result.user.last_name.includes(task?.cashtag_for_username)) {
