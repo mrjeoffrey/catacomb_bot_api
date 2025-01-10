@@ -42,6 +42,7 @@ export const registerMod = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "Admin registered successfully" });
   } catch (error) {
+    console.log(error, "_____________")
     res.status(500).json({ message: "Server error" });
   }
 };
