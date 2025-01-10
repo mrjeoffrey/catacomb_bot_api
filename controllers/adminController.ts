@@ -27,8 +27,36 @@ export const registerAdmin = async (req: Request, res: Response) => {
   }
 };
 
-// Admin Login
-export const loginAdmin = async (req: Request, res: Response) => {
+// Register Moderator
+export const registerMod = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  try {
+    const adminExists = await Admin.findOne({ email });
+    if (adminExists) {
+      return res.status(400).json({ message: "Admin already exists" });
+    }
+
+    const newAdmin = new Admin({ email, password, role: "moderator" });
+    await newAdmin.save();
+
+    res.status(201).json({ message: "Admin registered successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getModerators = async (req: Request, res: Response) => {
+  try {
+    const admins = await Admin.find();
+    res.status(200).json({ users: admins });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Admin/Moderator Login
+export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
@@ -37,10 +65,10 @@ export const loginAdmin = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ email: admin.email }, JWT_SECRET, {
+    const token = jwt.sign({ email: admin.email, role: admin.role }, JWT_SECRET, {
       expiresIn: "7d",
     });
-    res.json({ token });
+    res.json({ token, role: admin.role });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }

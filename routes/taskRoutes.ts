@@ -13,23 +13,23 @@ import {
   updateTaskOrder,
   getAllLimitedAndUnlimitedTasks,
 } from "../controllers/taskController";
-import { authenticateToken } from "../middlewares/authMiddleware";
+import { authenticateToken, authenticateTokenForAdmin } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 router.get("/", getAllTasks);
-router.get("/all",authenticateToken, getAllLimitedAndUnlimitedTasks);
-router.post("/create", authenticateToken, uploadAvatar, createTask);
+router.get("/all",authenticateTokenForAdmin, getAllLimitedAndUnlimitedTasks);
+router.post("/create", authenticateTokenForAdmin, uploadAvatar, createTask);
 router.post("/proof-task", uploadImage, taskProofingOrder);
 router.post("/validate", authenticateToken, validateTask);
-router.post("/check", authenticateToken, checkTask);
+router.post("/check", authenticateTokenForAdmin, checkTask);
 router.post(
   "/remove_from_user",
   authenticateToken,
   removingTaskfromUserTasksStatus
 );
-router.post("/reorder_task", authenticateToken, updateTaskOrder);
-router.post("/:id", authenticateToken, uploadAvatar, updateTask);
+router.post("/reorder_task", authenticateTokenForAdmin, updateTaskOrder);
+router.post("/:id", authenticateTokenForAdmin, uploadAvatar, updateTask);
 
-router.get("/:id", authenticateToken, removeTask);
+router.get("/:id", authenticateTokenForAdmin, removeTask);
 
 export default router;

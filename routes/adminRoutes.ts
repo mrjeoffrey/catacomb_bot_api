@@ -1,24 +1,28 @@
 import express from "express";
 import {
   registerAdmin,
-  loginAdmin,
+  login,
   blockUser,
   editTask,
   insertLevel,
   updateLevel,
   removeUser,
   removeChestOpenedHistory,
+  registerMod,
+  getModerators,
 } from "../controllers/adminController";
-import { authenticateToken } from "../middlewares/authMiddleware";
+import { authenticateTokenForAdmin } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
-router.post("/login", loginAdmin);
-router.post("/block-user", authenticateToken, blockUser);
-router.post("/remove-chesthistory", authenticateToken, removeChestOpenedHistory);
-router.post("/remove-user", authenticateToken, removeUser);
-router.put("/edit-task", authenticateToken, editTask);
-router.post("/insert-level", authenticateToken, insertLevel);
-router.put("/update-level", authenticateToken, updateLevel);
+router.post("/login", login);
+router.post("/block-user", authenticateTokenForAdmin, blockUser);
+router.post("/register-mod", authenticateTokenForAdmin, registerMod);
+router.post("/get-moderators", authenticateTokenForAdmin, getModerators);
+router.post("/remove-chesthistory", authenticateTokenForAdmin, removeChestOpenedHistory);
+router.post("/remove-user", authenticateTokenForAdmin, removeUser);
+router.put("/edit-task", authenticateTokenForAdmin, editTask);
+router.post("/insert-level", authenticateTokenForAdmin, insertLevel);
+router.put("/update-level", authenticateTokenForAdmin, updateLevel);
 
 export default router;

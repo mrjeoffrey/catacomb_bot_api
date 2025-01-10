@@ -1,12 +1,12 @@
 import express from "express";
 import { getSettings } from "../controllers/settingsController";
 import { updateSettings } from "../controllers/adminController";
-import { authenticateToken } from "../middlewares/authMiddleware";
+import { authenticateTokenForAdmin } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
 router.get("/", getSettings);
 // Update Settings
-router.put("/", authenticateToken, updateSettings);
+router.put("/", authenticateTokenForAdmin, updateSettings);
 
 export default router;
