@@ -18,7 +18,7 @@ const router = express.Router();
 router.post("/login", login);
 router.post("/block-user", authenticateTokenForAdmin, blockUser);
 router.post("/register-mod", authenticateTokenForAdmin, registerMod);
-router.post("/get-moderators", authenticateTokenForAdmin, getModerators);
+router.get("/get-moderators", authenticateTokenForAdmin, getModerators);
 router.post("/remove-chesthistory", authenticateTokenForAdmin, removeChestOpenedHistory);
 router.post("/remove-user", authenticateTokenForAdmin, removeUser);
 router.put("/edit-task", authenticateTokenForAdmin, editTask);
