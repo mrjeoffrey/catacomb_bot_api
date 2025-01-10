@@ -76,7 +76,7 @@ export const login = async (req: Request, res: Response) => {
 
 // Remove Admin by ID
 export const removeAdmin = async (req: Request, res: Response) => {
-  const { id } = req.body;
+  const { id } = req.params;
 
   try {
     const deletedAdmin = await Admin.findByIdAndDelete(id);
