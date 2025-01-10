@@ -74,6 +74,27 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+// Remove Admin by ID
+export const removeAdmin = async (req: Request, res: Response) => {
+  const { id } = req.body;
+
+  try {
+    const deletedAdmin = await Admin.findByIdAndDelete(id);
+
+    if (!deletedAdmin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    res.json({ message: "Admin removed successfully" });
+  } catch (error: any) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: error?.message || "Failed to delete Admin" });
+  }
+};
+
+
 // Remove User by ID
 export const removeUser = async (req: Request, res: Response) => {
   const { id } = req.body;
