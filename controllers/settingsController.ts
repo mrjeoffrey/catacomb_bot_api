@@ -3,9 +3,6 @@ import Settings from "../models/settingsModel";
 import { decodeBase64Image } from "../utils/decodeBase64Image";
 import mime from "mime-types";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
-import AWS from "aws-sdk";
 import { uploadImageToR2 } from "../utils/uploadImageToR2";
 
 
