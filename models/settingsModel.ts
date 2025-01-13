@@ -25,7 +25,7 @@ const settingsSchema: Schema = new Schema({
   season_settings: {
     currency_name: { type: String, required: true, default: "USDT" },
     currency_link: { type: String },
-    currency_img_url: { type: String, required: true },
+    currency_img_url: { type: String },
     prizes: {
       type: [Number],
       default: [200, 150, 120, 100, 90, 80, 70, 50, 40, 30, 25, 20, 10, 8, 7],
