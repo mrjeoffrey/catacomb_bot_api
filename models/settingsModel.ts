@@ -7,7 +7,7 @@ export interface ISettings extends Document {
   season_settings: {
     currency_name: string;
     currency_link: string;
-    currency_img_url: string;
+    currency_img: string;
     prizes: number[];
   };
 }
@@ -25,7 +25,7 @@ const settingsSchema: Schema = new Schema({
   season_settings: {
     currency_name: { type: String, required: true, default: "USDT" },
     currency_link: { type: String },
-    currency_img_url: { type: String },
+    currency_img: { type: String },
     prizes: {
       type: [Number],
       default: [200, 150, 120, 100, 90, 80, 70, 50, 40, 30, 25, 20, 10, 8, 7],

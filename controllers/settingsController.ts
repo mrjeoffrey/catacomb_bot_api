@@ -67,7 +67,7 @@ export const updateCurrencySettings = async (req: Request, res: Response) => {
     };
     console.log("____IMage url___", imageUrl)
     if (currency_img) {
-      updateFields["season_settings.currency_img_url"] = imageUrl;
+      updateFields["season_settings.currency_img"] = imageUrl;
     }
 
     const updatedSettings = await Settings.findOneAndUpdate(
