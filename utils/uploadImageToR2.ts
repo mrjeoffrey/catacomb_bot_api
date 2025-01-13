@@ -27,6 +27,6 @@ export const uploadImageToR2 = async (fileBuffer: Buffer, fileName: string) => {
     const uploadResult = await s3.upload(params).promise();
     return uploadResult.Location; // Return the URL of the uploaded file
   } catch (error) {
-    throw new Error('Error uploading to R2: ' + error.message);
+    throw new Error('Error uploading to R2: ' + error);
   }
 };
