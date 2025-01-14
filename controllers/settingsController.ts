@@ -94,6 +94,16 @@ export const getSettings = async (req: Request, res: Response) => {
   }
 };
 
+// Get Public Settings
+export const getPublicSettings = async (req: Request, res: Response) => {
+  try {
+    const settings = await Settings.findOne() as any;
+    res.json(settings?.season_settings);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // Update Settings
 export const updateSettings = async (req: Request, res: Response) => {
   const { opening_chest_earning, referral_earning, daily_opening_chests_limit } = req.body;
