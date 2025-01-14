@@ -1,5 +1,4 @@
 import path from "path";
-import fs from "fs";
 import { S3Client, PutObjectCommand, ObjectCannedACL } from "@aws-sdk/client-s3";
 import mime from "mime-types";
 import { CLOUDFLARE_R2_BUCKET, CLOUDFLARE_R2_ACCESS_KEY_ID, CLOUDFLARE_R2_SECRET_ACCESS_KEY, CLOUDFLARE_R2_ENDPOINT, CLOUDFLARE_R2_PUBLIC_ENDPOINT } from "../config/config";

@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
 import multer, { MulterError } from "multer";
-import path from "path";
-import fs from "fs";
 import mime from "mime-types";
 import Task from "../models/taskModel";
 import Settings from "../models/settingsModel";
@@ -10,29 +8,8 @@ import User, { IUser } from "../models/userModel";
 import mongoose, { Types } from "mongoose";
 import axios from "axios";
 import { handleReferralRewards } from "./userController";
+import { uploadImageToR2 } from "../utils/uploadImageToR2";
 
-const ensureImagesFolderExists = () => {
-  const imagesFolderPath = path.join(__dirname, "../public/images");
-
-  if (!fs.existsSync(imagesFolderPath)) {
-    fs.mkdirSync(imagesFolderPath, { recursive: true });
-  }
-};
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    ensureImagesFolderExists();
-
-    cb(null, "public/images");
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const finalFileName =
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname);
-
-    cb(null, finalFileName);
-  },
-});
 
 const fileFilter = (
   req: Request,
@@ -58,7 +35,6 @@ const fileFilter = (
 };
 
 const upload = multer({
-  storage,
   fileFilter,
 });
 
@@ -132,30 +108,17 @@ export const createTask = async (req: Request, res: Response) => {
     cashtag_for_username,
   } = req.body;
 
-  let savedFilePath = "";
+  let imageUrl = "";
 
   // Handle avatar URL
   if (avatar_url) {
     try {
       const fileData = decodeBase64Image(avatar_url);
       const mimeType = fileData.type;
-      const allowedTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-        "image/svg+xml",
-      ];
-
-      if (!allowedTypes.includes(mimeType)) {
-        return res.status(400).json({ message: "Unsupported image type" });
-      }
       const fileExtension = mime.extension(mimeType);
-      const uniqueFileName = `avatar-${Date.now()}.${fileExtension}`;
-      const filePath = path.join(__dirname, "../public/images", uniqueFileName);
-
-      fs.writeFileSync(filePath, fileData.data);
-      savedFilePath = `/images/${uniqueFileName}`;
+      const uniqueFileName = `task_image-${Date.now()}.${fileExtension}`;
+      // Upload image to Cloudflare R2
+      imageUrl = await uploadImageToR2(fileData.data, uniqueFileName);
     } catch (error) {
       return res.status(400).json({ message: "Invalid image format" });
     }
@@ -168,7 +131,7 @@ export const createTask = async (req: Request, res: Response) => {
       gold_reward,
       xp_reward,
       link,
-      avatar_url: savedFilePath,
+      avatar_url: imageUrl,
       is_auto_check: is_auto_check || false,
       group_bot_token: group_bot_token || null,
       cashtag_for_username: cashtag_for_username || null,
@@ -189,7 +152,6 @@ export const createTask = async (req: Request, res: Response) => {
 //Task Proof
 export const taskProofingOrder = async (req: Request, res: Response) => {
   const { telegram_id, task_id, image, url } = req.body;
-  let savedFilePath = "";
 
   try {
     const task = await Task.findById(task_id);
@@ -308,32 +270,17 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
       }
     } else {
       // Proof image handling for non-Telegram group tasks
+      let imageUrl = "";
+
+      // Handle avatar URL
       if (image) {
         try {
           const fileData = decodeBase64Image(image);
           const mimeType = fileData.type;
-          const allowedTypes = [
-            "image/jpeg",
-            "image/png",
-            "image/gif",
-            "image/webp",
-            "image/svg+xml",
-          ];
-
-          if (!allowedTypes.includes(mimeType)) {
-            return res.status(400).json({ message: "Unsupported image type" });
-          }
-
           const fileExtension = mime.extension(mimeType);
-          const uniqueFileName = `image-${Date.now()}.${fileExtension}`;
-          const filePath = path.join(
-            __dirname,
-            "../public/images",
-            uniqueFileName
-          );
-
-          fs.writeFileSync(filePath, fileData.data);
-          savedFilePath = `/images/${uniqueFileName}`;
+          const uniqueFileName = `task_proof_image-${Date.now()}.${fileExtension}`;
+          // Upload image to Cloudflare R2
+          imageUrl = await uploadImageToR2(fileData.data, uniqueFileName);
         } catch (error) {
           return res.status(400).json({ message: "Invalid image format" });
         }
@@ -349,19 +296,8 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
             message: "You have already done this task.",
           });
         } else {
-          if (
-            existingTask.proof_img &&
-            fs.existsSync(
-              path.join(__dirname, `../public${existingTask.proof_img}`)
-            )
-          ) {
-            fs.unlinkSync(
-              path.join(__dirname, `../public${existingTask.proof_img}`)
-            );
-          }
-
           // Update task details
-          existingTask.proof_img = savedFilePath;
+          existingTask.proof_img = imageUrl;
           existingTask.proof_url = url;
           existingTask.completed_date = new Date();
           existingTask.validation_status = "unchecked";
@@ -370,7 +306,7 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
         // Add new task if it doesn't exist
         user.task_done.push({
           task_id,
-          proof_img: savedFilePath,
+          proof_img: imageUrl,
           proof_url: url,
           completed_date: new Date(),
           validation_status: "unchecked",
@@ -509,17 +445,6 @@ export const removingTaskfromUserTasksStatus = async (
 
     const taskToRemove = user.task_done[taskIndex];
 
-    // If there's a proof image, remove it from the file system
-    if (taskToRemove.proof_img) {
-      const imagePath = path.join(
-        __dirname,
-        `../public${taskToRemove.proof_img}`
-      );
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
-    }
-
     // Remove the task from the user's task_done array
     user.task_done.splice(taskIndex, 1);
 
@@ -537,18 +462,27 @@ export const removingTaskfromUserTasksStatus = async (
 
 export const updateTask = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, gold_reward, xp_reward, link, is_auto_check, group_bot_token, cashtag_for_username, is_limited } =
+  const { name, gold_reward, xp_reward, link, avatar_url, is_auto_check, group_bot_token, cashtag_for_username, is_limited } =
     req.body;
-  const avatar_url = req.file ? `/images/${req.file.filename}` : undefined;
+
 
   try {
+    let imageUrl = await Task.findById(id)[0].avatar_url;
+    if (avatar_url) {
+      const fileData = decodeBase64Image(avatar_url);
+      const mimeType = fileData.type;
+      const fileExtension = mime.extension(mimeType);
+      const uniqueFileName = `task_image-${Date.now()}.${fileExtension}`;
+      // Upload image to Cloudflare R2
+      imageUrl = await uploadImageToR2(fileData.data, uniqueFileName);
+    }
     const task = await Task.findByIdAndUpdate(
       id,
       {
         name,
         gold_reward,
         xp_reward,
-        avatar_url,
+        avatar_url: imageUrl,
         link,
         is_auto_check,
         is_limited: is_limited || false,
@@ -610,15 +544,6 @@ export const removeTask = async (req: Request, res: Response) => {
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
-    }
-
-    if (task.avatar_url) {
-      const filePath = path.join(__dirname, "../public", task.avatar_url);
-
-      // Check if the file exists and delete it
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
     }
 
     res.json({ message: "Task removed successfully" });
