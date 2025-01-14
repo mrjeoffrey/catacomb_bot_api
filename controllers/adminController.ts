@@ -32,12 +32,19 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
   const { season_start, season_end } = req.body;
 
   try {
+    // Convert season_start and season_end to Unix timestamps
+    const seasonStartTimestamp = new Date(season_start).getTime();
+    const seasonEndTimestamp = new Date(season_end).getTime();
+
     const usersList = await User.find();
     const users = await Promise.all(
       usersList.map(async (user) => {
         const chestOpenedThisSeason = user.chest_opened_history.filter(
-          (entry) =>
-            entry.time_opened >= season_start && entry.time_opened <= season_end
+          (entry) => {
+            // Convert entry.time_opened to Unix timestamp
+            const entryTimestamp = new Date(entry.time_opened).getTime();
+            return entryTimestamp >= seasonStartTimestamp && entryTimestamp <= seasonEndTimestamp;
+          }
         );
 
         const chestSeasonXP = chestOpenedThisSeason.reduce(
@@ -54,8 +61,8 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
         const tasksDoneThisSeason = user.task_done.filter(
           (task) =>
             task.validation_status === "validated" &&
-            task.completed_date >= season_start &&
-            task.completed_date <= season_end
+            new Date(task.completed_date).getTime() >= seasonStartTimestamp &&
+            new Date(task.completed_date).getTime() <= seasonEndTimestamp
         );
 
         const tasksSeasonRewards = await Task.find({
@@ -78,8 +85,10 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
 
         // Calculate valid referrals this month
         const validReferralsThisMonth = user.valid_referrals.filter(
-          (referral) =>
-            referral.time_added >= season_start && referral.time_added <= season_end
+          (referral) => {
+            const referralTimestamp = new Date(referral.time_added).getTime();
+            return referralTimestamp >= seasonStartTimestamp && referralTimestamp <= seasonEndTimestamp;
+          }
         );
 
         const additionalXP = validReferralsThisMonth.length * 50;
