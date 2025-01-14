@@ -27,6 +27,80 @@ export const registerAdmin = async (req: Request, res: Response) => {
   }
 };
 
+
+export const getRankingsInSpecificPeriod = async (req: Request, res: Response) => {
+  const { season_start, season_end } = req.body;
+  const usersList = await User.find();
+  let users = [] as any[];
+  
+  await Promise.all(
+    usersList.map(async (user) => {
+      const chestOpenedThisSeason = user.chest_opened_history.filter(
+        (entry) =>
+          entry.time_opened >= season_start && entry.time_opened <= season_end
+      );
+  
+      const chestSeasonXP = chestOpenedThisSeason.reduce(
+        (sum, entry) => sum + entry.xp,
+        0
+      );
+  
+      const chestSeasonGold = chestOpenedThisSeason.reduce(
+        (sum, entry) => sum + entry.gold,
+        0
+      );
+  
+      // Calculate XP and gold from validated tasks done this season
+      const tasksDoneThisSeason = user.task_done.filter(
+        (task) =>
+          task.validation_status === "validated" &&
+          task.completed_date >= season_start &&
+          task.completed_date <= season_end
+      );
+  
+      // Assuming task XP and gold are stored in the task model
+      const tasksSeasonRewards = await Task.find({
+        _id: { $in: tasksDoneThisSeason.map((task) => task.task_id) },
+      });
+  
+      const taskSeasonXP = tasksSeasonRewards.reduce(
+        (sum, task) => sum + task.xp_reward,
+        0
+      );
+  
+      const taskSeasonGold = tasksSeasonRewards.reduce(
+        (sum, task) => sum + task.gold_reward,
+        0
+      );
+  
+      // Combine XP and gold from chests and tasks
+      const seasonXP = chestSeasonXP + taskSeasonXP;
+      const seasonGold = chestSeasonGold + taskSeasonGold;
+  
+      // Calculate valid referrals this month
+      const validReferralsThisMonth = user.valid_referrals.filter(
+        (referral) =>
+          referral.time_added >= season_start && referral.time_added <= season_end
+      );
+  
+      const additionalXP = validReferralsThisMonth.length * 50;
+  
+      // Total season XP including referral XP
+      const totalSeasonXP = seasonXP + additionalXP;
+      users.push({
+        seasonXP: totalSeasonXP,
+        user: user.telegram_id,
+        username: user.username,
+      });
+    })
+  );
+  
+  // Sort users by seasonXP in descending order
+  users.sort((a, b) => b.seasonXP - a.seasonXP);
+  res.status(200).json({ users });
+
+};
+
 // Register Moderator
 export const registerMod = async (req: Request, res: Response) => {
   const { email, password } = req.body;
