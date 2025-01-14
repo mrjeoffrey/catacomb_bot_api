@@ -467,7 +467,8 @@ export const updateTask = async (req: Request, res: Response) => {
 
 
   try {
-    let imageUrl = await Task.findById(id)[0].avatar_url;
+    const task_exist = await Task.findById(id);
+    let imageUrl = task_exist?.avatar_url;
     if (avatar_url) {
       const fileData = decodeBase64Image(avatar_url);
       const mimeType = fileData.type;
