@@ -33,8 +33,7 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
   const usersList = await User.find();
   let users = [] as any[];
   
-  await Promise.all(
-    usersList.map(async (user) => {
+  await usersList.map(async (user) => {
       const chestOpenedThisSeason = user.chest_opened_history.filter(
         (entry) =>
           entry.time_opened >= season_start && entry.time_opened <= season_end
@@ -93,7 +92,6 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
         username: user.username,
       });
     })
-  );
   
   // Sort users by seasonXP in descending order
   users.sort((a, b) => b.seasonXP - a.seasonXP);
