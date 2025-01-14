@@ -502,7 +502,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
     const { rankings, currentUserRank } = await getRankings(user);
     // Convert the Mongoose document to a plain JavaScript object
     const userPlainObject = user.toObject();
-
+    console.log(new Date(), "Current Time now")
     // Add the season_xp, season_gold, totalSeasonXP, rank, and valid referrals
     const userInfo = {
       ...userPlainObject,
