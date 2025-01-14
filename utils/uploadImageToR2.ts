@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import { S3Client, PutObjectCommand, ObjectCannedACL } from "@aws-sdk/client-s3";
 import mime from "mime-types";
-import { CLOUDFLARE_R2_BUCKET, CLOUDFLARE_R2_ACCESS_KEY_ID, CLOUDFLARE_R2_SECRET_ACCESS_KEY, CLOUDFLARE_R2_ENDPOINT } from "../config/config";
+import { CLOUDFLARE_R2_BUCKET, CLOUDFLARE_R2_ACCESS_KEY_ID, CLOUDFLARE_R2_SECRET_ACCESS_KEY, CLOUDFLARE_R2_ENDPOINT, CLOUDFLARE_R2_PUBLIC_ENDPOINT } from "../config/config";
 
 // Initialize the S3Client with Cloudflare R2 settings
 const s3Client = new S3Client({
@@ -31,7 +31,7 @@ export const uploadImageToR2 = async (fileBuffer: Buffer, fileName: string) => {
     const uploadResult = await s3Client.send(command);
     
     // Return the URL of the uploaded file (Cloudflare R2 URL)
-    const fileUrl = `https://${CLOUDFLARE_R2_BUCKET}.${CLOUDFLARE_R2_ENDPOINT}/${fileName}`;
+    const fileUrl = `${CLOUDFLARE_R2_PUBLIC_ENDPOINT}/${fileName}`;
     return fileUrl;
   } catch (error) {
     throw new Error("Error uploading to R2: " + error);

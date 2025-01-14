@@ -34,4 +34,5 @@ export const CLOUDFLARE_R2_ACCESS_KEY_ID = "0c3f22991a3d7c597db8e0212b64abe2";
 export const CLOUDFLARE_R2_SECRET_ACCESS_KEY = "281ae89a1f5dea7519aa663f1bfd7d8a96673676463bfc0ba9db1225ac8a8719";
 export const CLOUDFLARE_R2_REGION = "WNAM";
 export const CLOUDFLARE_R2_ENDPOINT = "https://fbd6e210caf3d534d6ed48a4bb97cf70.r2.cloudflarestorage.com";
+export const CLOUDFLARE_R2_PUBLIC_ENDPOINT = "https://pub-eb157c13cf5f4c28845c2a603ed21192.r2.dev"
 
