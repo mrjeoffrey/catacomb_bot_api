@@ -523,6 +523,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
       rank: currentUserRank,
       rankings: rankings,
       valid_referrals: validReferrals,
+      seasonStart:seasonStart, seasonEnd: seasonEnd
     };
 
     res.json(userInfo);
