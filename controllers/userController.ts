@@ -28,133 +28,23 @@ export const getAllUsers = async (req: Request, res: Response) => {
     // Process users, reset `current_season_xp` and `current_season_gold` if `chest_opened_history` is null, and add referral count
     const usersWithDetails = await Promise.all(
       users.map(async (user) => {
-        const startDate = new Date("2024-12-24");
-        const today = new Date();
-    
-        const chestOpenedThisPeriod = user.chest_opened_history.filter(
-          (entry) => entry.time_opened >= startDate && entry.time_opened <= today
-        );
-    
-        const totalChestXP = chestOpenedThisPeriod.reduce(
-          (sum, entry) => sum + entry.xp,
-          0
-        );
-    
-        const totalChestGold = chestOpenedThisPeriod.reduce(
-          (sum, entry) => sum + entry.gold,
-          0
-        );
-    
-        const tasksDoneThisPeriod = user.task_done.filter(
-          (task) =>
-            task.validation_status === "validated" &&
-            task.completed_date >= startDate &&
-            task.completed_date <= today
-        );
-    
-        const tasksRewards = await Task.find({
-          _id: { $in: tasksDoneThisPeriod.map((task) => task.task_id) },
-        });
-    
-        const totalTaskXP = tasksRewards.reduce(
-          (sum, task) => sum + task.xp_reward,
-          0
-        );
-    
-        const totalTaskGold = tasksRewards.reduce(
-          (sum, task) => sum + task.gold_reward,
-          0
-        );
-    
-        // Combine XP and gold from chests and tasks
-        const totalXP = totalChestXP + totalTaskXP;
-        const totalGold = totalChestGold + totalTaskGold;
-    
-        // Calculate valid referrals this period (from 2024/12/24 to today)
-        const validReferralsThisPeriod = user.valid_referrals.filter(
-          (referral) =>
-            referral.time_added >= startDate && referral.time_added <= today
-        );
-    
-        const additionalXPFromReferrals = validReferralsThisPeriod.length * 50;
-    
-        // Total XP including referral XP
-        const totalXPWithReferrals = totalXP + additionalXPFromReferrals;
-    
-        user.xp = totalXPWithReferrals;
-        user.gold = totalGold;
-    
-        const { seasonStart, seasonEnd } = getCurrentSeason();
-        // Calculate the user's season XP and gold from chest opened history
-        const chestOpenedThisSeason = user.chest_opened_history.filter(
-          (entry) =>
-            entry.time_opened >= seasonStart && entry.time_opened <= seasonEnd
-        );
-    
-        const chestSeasonXP = chestOpenedThisSeason.reduce(
-          (sum, entry) => sum + entry.xp,
-          0
-        );
-    
-        const chestSeasonGold = chestOpenedThisSeason.reduce(
-          (sum, entry) => sum + entry.gold,
-          0
-        );
-    
-        // Calculate XP and gold from validated tasks done this season
-        const tasksDoneThisSeason = user.task_done.filter(
-          (task) =>
-            task.validation_status === "validated" &&
-            task.completed_date >= seasonStart &&
-            task.completed_date <= seasonEnd
-        );
-    
-        // Assuming task XP and gold are stored in the task model
-        const tasksSeasonRewards = await Task.find({
-          _id: { $in: tasksDoneThisSeason.map((task) => task.task_id) },
-        });
-    
-        const taskSeasonXP = tasksSeasonRewards.reduce(
-          (sum, task) => sum + task.xp_reward,
-          0
-        );
-    
-        const taskSeasonGold = tasksSeasonRewards.reduce(
-          (sum, task) => sum + task.gold_reward,
-          0
-        );
-    
-        // Combine XP and gold from chests and tasks
-        const seasonXP = chestSeasonXP + taskSeasonXP;
-        const seasonGold = chestSeasonGold + taskSeasonGold;
-    
-        // Calculate valid referrals this month
-        const validReferralsThisMonth = user.valid_referrals.filter(
-          (referral) =>
-            referral.time_added >= seasonStart && referral.time_added <= seasonEnd
-        );
-    
-        const additionalXP = validReferralsThisMonth.length * 50;
-    
-        // Total season XP including referral XP
-        const totalSeasonXP = seasonXP + additionalXP;
-    
-        user.current_season_xp = totalSeasonXP;
-        user.current_season_gold = seasonGold;
-    
-        await user.save();
+        // Reset values if `chest_opened_history` is null or empty
+      
+          user.current_season_xp = 0;
+          user.current_season_gold = 0;
+          await user.save();
 
         // Calculate referral count
         const referralCount = await User.countDocuments({ referred_by: user._id });
-
-        return {
-          ...user.toObject(), // Convert Mongoose document to plain object
-          referralCount,
-        };
+        
+        // return {
+        //   ...user.toObject(), // Convert Mongoose document to plain object
+        //   referralCount,
+        // };
       })
     );
 
-    res.json(usersWithDetails);
+    res.json({message: "OK"});
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
