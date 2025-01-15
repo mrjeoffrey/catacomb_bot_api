@@ -25,26 +25,18 @@ export const getAllUsers = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Users not found" });
     }
 
-    // Process users, reset `current_season_xp` and `current_season_gold` if `chest_opened_history` is null, and add referral count
-    const usersWithDetails = await Promise.all(
+    // Add referred_by_count for each user
+    const usersWithReferralCount = await Promise.all(
       users.map(async (user) => {
-        // Reset values if `chest_opened_history` is null or empty
-      
-          user.current_season_xp = 0;
-          user.current_season_gold = 0;
-          await user.save();
-
-        // Calculate referral count
         const referralCount = await User.countDocuments({ referred_by: user._id });
-        
-        // return {
-        //   ...user.toObject(), // Convert Mongoose document to plain object
-        //   referralCount,
-        // };
+        return {
+          ...user.toObject(), // Convert Mongoose document to plain object
+          referralCount,
+        };
       })
     );
 
-    res.json({message: "OK"});
+    res.json(usersWithReferralCount);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
@@ -205,8 +197,8 @@ const getRankings = async (current_user: IUser) => {
       $project: {
         username: 1,
         telegram_id: 1,
-        current_season_xp: { $ifNull: ["$current_season_xp", 0] },
-        current_season_gold: { $ifNull: ["$current_season_gold", 0] },
+        current_season_xp: 1,
+        current_season_gold: 1,
       },
     },
     { $sort: { current_season_xp: -1, current_season_gold: -1 } }, // Sort by XP first, then by gold
