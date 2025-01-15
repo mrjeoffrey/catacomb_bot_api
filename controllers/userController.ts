@@ -131,40 +131,48 @@ export const getUsersByPaginationAndFiltering = async (req: Request, res: Respon
 
 const getCurrentSeason = () => {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth(); // 0-indexed (0 = January)
-  const day = now.getDate();
-
-
-  // Special case for the first season: December 20, 2024, to January 14, 2025
-  let seasonStart, seasonEnd, seasonNumber;
-
-  const baseSeasonStart = new Date(Date.UTC(2024, 11, 20)); // December 20, 2024
-  const baseSeasonEnd = new Date(Date.UTC(2025, 0, 14)); // January 14, 2025
-
-  if (now >= baseSeasonStart && now <= baseSeasonEnd) {
-    // Special case: Season 1
-    seasonStart = baseSeasonStart;
-    seasonEnd = baseSeasonEnd;
-    seasonNumber = 1;
-  } else {
-    // Calculate the general season based on 15-day periods
-    const timeDifference = now.getTime() - baseSeasonStart.getTime();
-    const totalDays = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-    seasonNumber = Math.floor(totalDays / 15) + 1;
-
-    // Determine the start and end of the season
-    const daysFromBase = (seasonNumber - 1) * 15;
-    seasonStart = new Date(baseSeasonStart);
-    seasonStart.setUTCDate(seasonStart.getUTCDate() + daysFromBase);
-
-    seasonEnd = new Date(seasonStart);
-    seasonEnd.setUTCDate(
-      seasonStart.getUTCDate() + 14 > new Date(seasonStart.getUTCFullYear(), seasonStart.getUTCMonth() + 1, 0).getUTCDate()
-        ? new Date(seasonStart.getUTCFullYear(), seasonStart.getUTCMonth() + 1, 0).getUTCDate() - seasonStart.getUTCDate()
-        : 14
-    );
+  const baseDate = new Date(Date.UTC(2024, 11, 20)); // December 20, 2024
+  
+  // Special case for Season 1
+  if (now >= baseDate && now <= new Date(Date.UTC(2025, 0, 14))) {
+    return {
+      seasonNumber: 1,
+      seasonPeriod: "December 20, 2024 until January 14, 2025"
+    };
   }
+
+  let seasonStart, seasonEnd, seasonNumber;
+  const currentYear = now.getUTCFullYear();
+  const currentMonth = now.getUTCMonth();
+  const currentDay = now.getUTCDate();
+
+  if (currentDay <= 14) {
+    // First half of month (1st-14th)
+    seasonStart = new Date(Date.UTC(currentYear, currentMonth, 1));
+    seasonEnd = new Date(Date.UTC(currentYear, currentMonth, 14));
+  } else {
+    // Second half of month (15th-last day)
+    seasonStart = new Date(Date.UTC(currentYear, currentMonth, 15));
+    seasonEnd = new Date(Date.UTC(currentYear, currentMonth + 1, 0)); // Last day of current month
+  }
+
+  // Calculate season number
+  if (currentYear === 2025) {
+    if (currentMonth === 0) { // January
+      seasonNumber = currentDay <= 14 ? 1 : 2; // Special case for January
+    } else {
+      const monthOffset = currentMonth * 2; // Each month has 2 seasons
+      seasonNumber = currentDay <= 14 ? monthOffset + 3 : monthOffset + 4;
+    }
+  } else {
+    // For years after 2025
+    const yearOffset = (currentYear - 2025) * 24; // 24 seasons per year
+    const monthOffset = currentMonth * 2;
+    seasonNumber = currentDay <= 14 ? monthOffset + yearOffset + 3 : monthOffset + yearOffset + 4;
+  }
+
+  // Format the season period
+  const options = { day: 'numeric', month: 'long', year: 'numeric' };
   return { seasonStart, seasonEnd };
 };
 
