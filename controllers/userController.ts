@@ -135,28 +135,36 @@ const getCurrentSeason = () => {
   const month = now.getMonth(); // 0-indexed (0 = January)
   const day = now.getDate();
 
-  let seasonStart, seasonEnd;
 
   // Special case for the first season: December 20, 2024, to January 14, 2025
-  if (
-    (year === 2024 && month === 11 && day >= 20) ||
-    (year === 2025 && month === 0 && day <= 14)
-  ) {
-    seasonStart = new Date(2024, 11, 20); // December 20, 2024
-    seasonEnd = new Date(2025, 0, 14); // January 14, 2025
-  } else {
-    // General rule for seasons
-    if (day <= 14) {
-      // First half of the month
-      seasonStart = new Date(year, month, 1); // 1st of the current month
-      seasonEnd = new Date(year, month, 14); // 14th of the current month
-    } else {
-      // Second half of the month
-      seasonStart = new Date(year, month, 15); // 15th of the current month
-      seasonEnd = new Date(year, month + 1, 0); // Last day of the current month
-    }
-  }
+  let seasonStart, seasonEnd, seasonNumber;
 
+  const baseSeasonStart = new Date(Date.UTC(2024, 11, 20)); // December 20, 2024
+  const baseSeasonEnd = new Date(Date.UTC(2025, 0, 14)); // January 14, 2025
+
+  if (now >= baseSeasonStart && now <= baseSeasonEnd) {
+    // Special case: Season 1
+    seasonStart = baseSeasonStart;
+    seasonEnd = baseSeasonEnd;
+    seasonNumber = 1;
+  } else {
+    // Calculate the general season based on 15-day periods
+    const timeDifference = now.getTime() - baseSeasonStart.getTime();
+    const totalDays = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+    seasonNumber = Math.floor(totalDays / 15) + 1;
+
+    // Determine the start and end of the season
+    const daysFromBase = (seasonNumber - 1) * 15;
+    seasonStart = new Date(baseSeasonStart);
+    seasonStart.setUTCDate(seasonStart.getUTCDate() + daysFromBase);
+
+    seasonEnd = new Date(seasonStart);
+    seasonEnd.setUTCDate(
+      seasonStart.getUTCDate() + 14 > new Date(seasonStart.getUTCFullYear(), seasonStart.getUTCMonth() + 1, 0).getUTCDate()
+        ? new Date(seasonStart.getUTCFullYear(), seasonStart.getUTCMonth() + 1, 0).getUTCDate() - seasonStart.getUTCDate()
+        : 14
+    );
+  }
   return { seasonStart, seasonEnd };
 };
 
@@ -502,7 +510,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
     const { rankings, currentUserRank } = await getRankings(user);
     // Convert the Mongoose document to a plain JavaScript object
     const userPlainObject = user.toObject();
-    console.log(new Date(), "Current Time now")
+    console.log(new Date(), "Current Time")
     // Add the season_xp, season_gold, totalSeasonXP, rank, and valid referrals
     const userInfo = {
       ...userPlainObject,
