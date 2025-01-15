@@ -64,8 +64,8 @@ const userSchema: Schema = new Schema({
   ],
   blocked: { type: Boolean, default: false },
   created_at: { type: Date, default: Date.now },
-  current_season_xp: { type: Number },
-  current_season_gold: { type: Number },
+  current_season_xp: { type: Number, default: 0},
+  current_season_gold: { type: Number, default: 0 },
   limited_time: {type: Date, default:null}
 });
 
