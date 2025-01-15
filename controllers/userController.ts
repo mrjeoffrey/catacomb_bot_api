@@ -25,10 +25,21 @@ export const getAllUsers = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Users not found" });
     }
 
-    // Add referred_by_count for each user
-    const usersWithReferralCount = await Promise.all(
+    // Process users, reset `current_season_xp` and `current_season_gold` if `chest_opened_history` is null, and add referral count
+    const usersWithDetails = await Promise.all(
       users.map(async (user) => {
+        // Reset values if `chest_opened_history` is null or empty
+        if (!user.chest_opened_history || user.chest_opened_history.length === 0) {
+          user.current_season_xp = 0;
+          user.current_season_gold = 0;
+
+          // Save the changes to the user (if you want to persist the reset)
+          await user.save();
+        }
+
+        // Calculate referral count
         const referralCount = await User.countDocuments({ referred_by: user._id });
+
         return {
           ...user.toObject(), // Convert Mongoose document to plain object
           referralCount,
@@ -36,7 +47,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
       })
     );
 
-    res.json(usersWithReferralCount);
+    res.json(usersWithDetails);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
