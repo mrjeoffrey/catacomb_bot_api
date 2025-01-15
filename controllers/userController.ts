@@ -135,13 +135,20 @@ const getCurrentSeason = () => {
   
   // Special case for Season 1
   if (now >= baseDate && now <= new Date(Date.UTC(2025, 0, 14))) {
+    const seasonStart = baseDate;
+    const seasonEnd = new Date(Date.UTC(2025, 0, 14));
     return {
       seasonNumber: 1,
-      seasonPeriod: "December 20, 2024 until January 14, 2025"
+      seasonPeriod: "December 20, 2024 until January 14, 2025",
+      seasonStart,
+      seasonEnd
     };
   }
 
-  let seasonStart, seasonEnd, seasonNumber;
+  let seasonStart: Date;
+  let seasonEnd: Date;
+  let seasonNumber: number;
+  
   const currentYear = now.getUTCFullYear();
   const currentMonth = now.getUTCMonth();
   const currentDay = now.getUTCDate();
@@ -172,10 +179,16 @@ const getCurrentSeason = () => {
   }
 
   // Format the season period
-  const options = { day: 'numeric', month: 'long', year: 'numeric' };
-  return { seasonStart, seasonEnd };
-};
+  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+  const seasonPeriod = `${seasonStart.toLocaleDateString('en-US', options)} until ${seasonEnd.toLocaleDateString('en-US', options)}`;
 
+  return { 
+    seasonPeriod, 
+    seasonNumber,
+    seasonStart,
+    seasonEnd 
+  };
+};
 const getRankings = async (current_user: IUser) => {
   // Retrieve all user rankings, comparing current_season_xp and current_season_gold
   const allRankings = await User.aggregate([
