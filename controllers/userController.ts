@@ -197,8 +197,8 @@ const getRankings = async (current_user: IUser) => {
       $project: {
         username: 1,
         telegram_id: 1,
-        current_season_xp: 1,
-        current_season_gold: 1,
+        current_season_xp: { $ifNull: ["$current_season_xp", 0] },
+        current_season_gold: { $ifNull: ["$current_season_gold", 0] },
       },
     },
     { $sort: { current_season_xp: -1, current_season_gold: -1 } }, // Sort by XP first, then by gold
