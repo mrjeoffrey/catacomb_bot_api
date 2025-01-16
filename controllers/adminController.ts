@@ -5,7 +5,7 @@ import User from "../models/userModel";
 import Task from "../models/taskModel";
 import Settings from "../models/settingsModel";
 import Level from "../models/levelModel";
-import { JWT_SECRET } from "../config/config";
+import { JWT_SECRET, SEASONS } from "../config/config";
 import { isValidObjectId } from "mongoose";
 
 // Register Admin
@@ -27,21 +27,34 @@ export const registerAdmin = async (req: Request, res: Response) => {
   }
 };
 
+export const getSeasonsList = async (req: Request, res: Response) => {
+  const now = new Date();
+  const pastSeasons = SEASONS.filter(
+    (season) => now >= season.seasonStart
+  );
+
+  res.status(200).json(pastSeasons);
+};
 
 export const getRankingsInSpecificPeriod = async (req: Request, res: Response) => {
-  const { season_start, season_end } = req.body;
+  const { season_number } = req.body;
 
   try {
-    // Convert season_start and season_end to Unix timestamps
-    const seasonStartTimestamp = new Date(season_start).getTime();
-    const seasonEndTimestamp = new Date(season_end).getTime();
+    // Get the season from SEASONS array based on the season_number
+    const season = SEASONS.find((s) => s.seasonNumber === season_number);
+
+    if (!season) {
+      return res.status(400).json({ error: `Season with number ${season_number} not found` });
+    }
+
+    const seasonStartTimestamp = season.seasonStart.getTime();
+    const seasonEndTimestamp = season.seasonEnd.getTime();
 
     const usersList = await User.find();
     const users = await Promise.all(
       usersList.map(async (user) => {
         const chestOpenedThisSeason = user.chest_opened_history.filter(
           (entry) => {
-            // Convert entry.time_opened to Unix timestamp
             const entryTimestamp = new Date(entry.time_opened).getTime();
             return entryTimestamp >= seasonStartTimestamp && entryTimestamp <= seasonEndTimestamp;
           }
@@ -57,7 +70,6 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
           0
         );
 
-        // Calculate XP and gold from validated tasks done this season
         const tasksDoneThisSeason = user.task_done.filter(
           (task) =>
             task.validation_status === "validated" &&
@@ -79,11 +91,9 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
           0
         );
 
-        // Combine XP and gold from chests and tasks
         const seasonXP = chestSeasonXP + taskSeasonXP;
         const seasonGold = chestSeasonGold + taskSeasonGold;
 
-        // Calculate valid referrals this month
         const validReferralsThisMonth = user.valid_referrals.filter(
           (referral) => {
             const referralTimestamp = new Date(referral.time_added).getTime();
@@ -93,7 +103,6 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
 
         const additionalXP = validReferralsThisMonth.length * 50;
 
-        // Total season XP including referral XP
         const totalSeasonXP = seasonXP + additionalXP;
 
         return {
@@ -104,7 +113,6 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
       })
     );
 
-    // Sort users by seasonXP in descending order
     users.sort((a, b) => b.seasonXP - a.seasonXP);
 
     res.status(200).json({ users });

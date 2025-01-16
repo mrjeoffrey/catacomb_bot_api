@@ -12,6 +12,7 @@ import {
   getModerators,
   removeAdmin,
   getRankingsInSpecificPeriod,
+  getSeasonsList,
 } from "../controllers/adminController";
 import { authenticateTokenForAdmin } from "../middlewares/authMiddleware";
 
@@ -22,6 +23,7 @@ router.delete("/remove-admin/:id", authenticateTokenForAdmin, removeAdmin);
 router.post("/block-user", authenticateTokenForAdmin, blockUser);
 router.post("/register-mod", authenticateTokenForAdmin, registerMod);
 router.post("/rankings-period", authenticateTokenForAdmin, getRankingsInSpecificPeriod);
+router.get("/season-list", authenticateTokenForAdmin, getSeasonsList)
 router.get("/get-moderators", authenticateTokenForAdmin, getModerators);
 router.post("/remove-chesthistory", authenticateTokenForAdmin, removeChestOpenedHistory);
 router.post("/remove-user", authenticateTokenForAdmin, removeUser);

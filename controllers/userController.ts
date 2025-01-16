@@ -6,6 +6,7 @@ import { getUserLevel } from "./levelController";
 import crypto from "crypto";
 import { isValidObjectId } from "mongoose";
 import levelModel from "../models/levelModel";
+import { getCurrentSeason } from "../config/config";
 
 // Get All Users
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -129,66 +130,6 @@ export const getUsersByPaginationAndFiltering = async (req: Request, res: Respon
 
 
 
-const getCurrentSeason = () => {
-  const now = new Date();
-  const baseDate = new Date(Date.UTC(2024, 11, 20)); // December 20, 2024
-  
-  // Special case for Season 1
-  if (now >= baseDate && now <= new Date(Date.UTC(2025, 0, 14))) {
-    const seasonStart = baseDate;
-    const seasonEnd = new Date(Date.UTC(2025, 0, 14));
-    return {
-      seasonNumber: 1,
-      seasonPeriod: "December 20, 2024 until January 14, 2025",
-      seasonStart,
-      seasonEnd
-    };
-  }
-
-  let seasonStart: Date;
-  let seasonEnd: Date;
-  let seasonNumber: number;
-  
-  const currentYear = now.getUTCFullYear();
-  const currentMonth = now.getUTCMonth();
-  const currentDay = now.getUTCDate();
-
-  if (currentDay <= 14) {
-    // First half of month (1st-14th)
-    seasonStart = new Date(Date.UTC(currentYear, currentMonth, 1));
-    seasonEnd = new Date(Date.UTC(currentYear, currentMonth, 14));
-  } else {
-    // Second half of month (15th-last day)
-    seasonStart = new Date(Date.UTC(currentYear, currentMonth, 15));
-    seasonEnd = new Date(Date.UTC(currentYear, currentMonth + 1, 0)); // Last day of current month
-  }
-
-  // Calculate season number
-  if (currentYear === 2025) {
-    if (currentMonth === 0) { // January
-      seasonNumber = currentDay <= 14 ? 1 : 2; // Special case for January
-    } else {
-      const monthOffset = currentMonth * 2; // Each month has 2 seasons
-      seasonNumber = currentDay <= 14 ? monthOffset + 3 : monthOffset + 4;
-    }
-  } else {
-    // For years after 2025
-    const yearOffset = (currentYear - 2025) * 24; // 24 seasons per year
-    const monthOffset = currentMonth * 2;
-    seasonNumber = currentDay <= 14 ? monthOffset + yearOffset + 3 : monthOffset + yearOffset + 4;
-  }
-
-  // Format the season period
-  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-  const seasonPeriod = `${seasonStart.toLocaleDateString('en-US', options)} until ${seasonEnd.toLocaleDateString('en-US', options)}`;
-
-  return { 
-    seasonPeriod, 
-    seasonNumber,
-    seasonStart,
-    seasonEnd 
-  };
-};
 const getRankings = async (current_user: IUser) => {
   // Retrieve all user rankings, comparing current_season_xp and current_season_gold
   const allRankings = await User.aggregate([
