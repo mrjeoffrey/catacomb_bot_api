@@ -4,6 +4,7 @@ import { decodeBase64Image } from "../utils/decodeBase64Image";
 import mime from "mime-types";
 import multer from "multer";
 import { uploadImageToR2 } from "../utils/uploadImageToR2";
+import { SEASONS } from "../config/config";
 
 
 const fileFilter = (
@@ -62,7 +63,7 @@ export const updateCurrencySettings = async (req: Request, res: Response) => {
       "season_settings.currency_name": currency_name,
       "season_settings.currency_link": currency_link,
     };
-    console.log("____IMage url___", imageUrl)
+
     if (currency_img) {
       (updateFields as any)["season_settings.currency_img"] = imageUrl;
     }
@@ -89,6 +90,27 @@ export const getSettings = async (req: Request, res: Response) => {
   try {
     const settings = await Settings.findOne();
     res.json(settings);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getCurrentSeasonEndPoint = async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    
+      // Find the current season based on the current date
+      const currentSeason = SEASONS.find((season) => now >= season.seasonStart && now <= season.seasonEnd);
+    
+      if (!currentSeason) {
+        throw new Error('No current season found');
+      }
+    
+    res.json({ 
+      seasonNumber: currentSeason.seasonNumber,
+      seasonStart: currentSeason.seasonStart,
+      seasonEnd: currentSeason.seasonEnd 
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
