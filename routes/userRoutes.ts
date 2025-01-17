@@ -1,12 +1,12 @@
 import express from "express";
 import {
   getUserInfo,
-  openChest,
   getUsersByPaginationAndFiltering,
   createUser,
   getUserById,
   getAllUsers,
 } from "../controllers/userController";
+import { openChest } from "../controllers/chestOpeningGameController";
 
 const router = express.Router();
 
