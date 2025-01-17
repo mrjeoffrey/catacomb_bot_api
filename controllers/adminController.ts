@@ -7,6 +7,7 @@ import Settings from "../models/settingsModel";
 import Level from "../models/levelModel";
 import { JWT_SECRET, SEASONS } from "../config/config";
 import { isValidObjectId } from "mongoose";
+import { getSpecificSeasonXPAndGoldByUser } from "./userController";
 
 // Register Admin
 export const registerAdmin = async (req: Request, res: Response) => {
@@ -47,66 +48,16 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
       return res.status(400).json({ error: `Season with number ${season_number} not found` });
     }
 
-    const seasonStartTimestamp = season.seasonStart.getTime();
-    const seasonEndTimestamp = season.seasonEnd.getTime();
+    const seasonStart = season.seasonStart;
+    const seasonEnd = season.seasonEnd;
 
     const usersList = await User.find();
     const users = await Promise.all(
       usersList.map(async (user) => {
-        const chestOpenedThisSeason = user.chest_opened_history.filter(
-          (entry) => {
-            const entryTimestamp = new Date(entry.time_opened).getTime();
-            return entryTimestamp >= seasonStartTimestamp && entryTimestamp <= seasonEndTimestamp;
-          }
-        );
-
-        const chestSeasonXP = chestOpenedThisSeason.reduce(
-          (sum, entry) => sum + entry.xp,
-          0
-        );
-
-        const chestSeasonGold = chestOpenedThisSeason.reduce(
-          (sum, entry) => sum + entry.gold,
-          0
-        );
-
-        const tasksDoneThisSeason = user.task_done.filter(
-          (task) =>
-            task.validation_status === "validated" &&
-            new Date(task.completed_date).getTime() >= seasonStartTimestamp &&
-            new Date(task.completed_date).getTime() <= seasonEndTimestamp
-        );
-
-        const tasksSeasonRewards = await Task.find({
-          _id: { $in: tasksDoneThisSeason.map((task) => task.task_id) },
-        });
-
-        const taskSeasonXP = tasksSeasonRewards.reduce(
-          (sum, task) => sum + task.xp_reward,
-          0
-        );
-
-        const taskSeasonGold = tasksSeasonRewards.reduce(
-          (sum, task) => sum + task.gold_reward,
-          0
-        );
-
-        const seasonXP = chestSeasonXP + taskSeasonXP;
-        const seasonGold = chestSeasonGold + taskSeasonGold;
-
-        const validReferralsThisMonth = user.valid_referrals.filter(
-          (referral) => {
-            const referralTimestamp = new Date(referral.time_added).getTime();
-            return referralTimestamp >= seasonStartTimestamp && referralTimestamp <= seasonEndTimestamp;
-          }
-        );
-
-        const additionalXP = validReferralsThisMonth.length * 50;
-
-        const totalSeasonXP = seasonXP + additionalXP;
+        const {seasonXP} = await getSpecificSeasonXPAndGoldByUser(user, seasonStart, seasonEnd)
 
         return {
-          seasonXP: totalSeasonXP,
+          seasonXP: seasonXP,
           user: user.telegram_id,
           username: user.username,
         };
