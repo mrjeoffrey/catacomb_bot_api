@@ -168,12 +168,15 @@ export const tappingPyramid = async (req: Request, res: Response) => {
 const getClaimableTickets = (
   lastClaimDate: Date | null = null,
   lastClaimTickets: number,
-  lastlastClaimTickets: number | null = null
+  lastResetStatus: boolean | null = false
 ) => {
   const currentDate = new Date();
 
   if (!lastClaimDate) {
-    return 1; // If no last claim date, return 1 ticket by default
+    return {
+      claimable: 1,
+      resetted: true,
+    }; // If no last claim date, return 1 ticket by default
   }
 
   const timeDifference =
@@ -186,16 +189,26 @@ const getClaimableTickets = (
 
   // If more than 48 hours have passed, reset to 1 ticket
   if (timeDifference >= twoDaysInMs) {
-    return 1;
+    return {
+      claimable: 1,
+      resetted: true,
+    }; 
   }
 
   // If between 24 and 48 hours, calculate based on the number of tickets claimed last time
   if (timeDifference >= oneDayInMs) {
-    if(lastlastClaimTickets !== 1 && lastClaimTickets === 1)  return 1;
-    return Math.min(lastClaimTickets + 1, 4); // Add 1 ticket up to a maximum of 4
+    if(lastResetStatus)  return  {
+      claimable: 1,
+      resetted: false,
+    };;
+    return  {
+      claimable: Math.min(lastClaimTickets + 1, 4),
+      resetted: false,
+    }; ; // Add 1 ticket up to a maximum of 4
   }
 
-  return 0; // Less than 24 hours, no tickets to claim
+  return {claimable: 0,
+    resetted: false,}; // Less than 24 hours, no tickets to claim
 };
 
 export const claimDailyTicket = async (req: Request, res: Response) => {
@@ -213,26 +226,28 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
   const currentDate = new Date();
 
   const claimableTickets = lastClaim[0]
-  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[1]? lastClaim[1]?.number_of_tickets : null)
+  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[1]?.resetted)
   : getClaimableTickets(null, 0, null);
 
-  if (claimableTickets === 0) {
+  if (claimableTickets.claimable === 0) {
     return res.status(200).json({ message: "Tickets already claimed for today" });
   }
 
   // Update user history and tickets
   user.tickets_getting_history.push({
     date: currentDate,
-    number_of_tickets: claimableTickets,
+    number_of_tickets: claimableTickets.claimable,
+    resetted: claimableTickets.resetted,
     due_to: "daily",
   });
-  user.tickets_remaining += claimableTickets;
+  user.tickets_remaining += claimableTickets.claimable;
   await user.save();
 
   return res.status(200).json({
     message: `Claim ${claimableTickets} ticket(s)`,
-    ticketsClaimed: claimableTickets,
+    ticketsClaimed: claimableTickets.claimable,
     ticketsRemaining: user.tickets_remaining,
+    resetted: claimableTickets.resetted,
   });
 
 };
@@ -251,10 +266,11 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
 
   // If no previous claim, start fresh
   const claimableTickets = lastClaim[0]
-  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[1]? lastClaim[1]?.number_of_tickets : null)
+  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[1]?.resetted)
   : getClaimableTickets(null, 0, null);
 
-  const message = claimableTickets === 0 
+
+  const message = claimableTickets.claimable === 0 
     ? "Tickets already claimed for today" 
     : `Claim ${claimableTickets} ticket(s)`;
 
@@ -264,6 +280,7 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
     current_date: new Date(),
     ticketsRemaining: user.tickets_remaining,
     ticketsClaimingHistory: user.tickets_getting_history,
+    resetted: claimableTickets.resetted
   });
 }
 
