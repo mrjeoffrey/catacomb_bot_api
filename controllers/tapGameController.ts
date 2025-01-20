@@ -244,7 +244,7 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
   await user.save();
 
   return res.status(200).json({
-    message: `Claim ${claimableTickets} ticket(s)`,
+    message: `Claim ${claimableTickets.claimable} ticket(s)`,
     ticketsClaimed: claimableTickets.claimable,
     ticketsRemaining: user.tickets_remaining,
     resetted: claimableTickets.resetted,
@@ -272,7 +272,7 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
 
   const message = claimableTickets.claimable === 0 
     ? "Tickets already claimed for today" 
-    : `Claim ${claimableTickets} ticket(s)`;
+    : `Claim ${claimableTickets.claimable} ticket(s)`;
 
   return res.status(200).json({
     message,
