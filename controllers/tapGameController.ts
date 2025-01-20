@@ -283,13 +283,18 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
 
   if (claimableTickets === 0) {
     return res
-      .status(400)
-      .json({ message: "Tickets already claimed for today", ticketsRemaining: user.tickets_remaining, });
+      .status(200)
+      .json({
+        message: "Tickets already claimed for today",
+        claimableTickets,
+        ticketsRemaining: user.tickets_remaining,
+        ticketsClaimingHistory: user.tickets_getting_history
+      });
   }
 
   return res
     .status(200)
-    .json({ message: `Claim ${claimableTickets} ticket(s)`, claimableTickets, ticketsRemaining: user.tickets_remaining, });
+    .json({ message: `Claim ${claimableTickets} ticket(s)`, claimableTickets, ticketsRemaining: user.tickets_remaining, ticketsClaimingHistory: user.tickets_getting_history });
 };
 
 export const ticketToTaps = async (req: Request, res: Response) => {
