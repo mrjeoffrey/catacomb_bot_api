@@ -200,7 +200,7 @@ const getClaimableTickets = (
     if(lastResetStatus)  return  {
       claimable: 1,
       resetted: false,
-    };;
+    };
     return  {
       claimable: Math.min(lastClaimTickets + 1, 4),
       resetted: false,
@@ -226,7 +226,7 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
   const currentDate = new Date();
 
   const claimableTickets = lastClaim[0]
-  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[1]?.resetted)
+  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[0]?.resetted)
   : getClaimableTickets(null, 0, null);
 
   if (claimableTickets.claimable === 0) {
@@ -266,7 +266,7 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
 
   // If no previous claim, start fresh
   const claimableTickets = lastClaim[0]
-  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[1]?.resetted)
+  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[0]?.resetted)
   : getClaimableTickets(null, 0, null);
 
 
