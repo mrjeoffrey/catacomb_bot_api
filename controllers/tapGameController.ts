@@ -157,7 +157,8 @@ export const tappingPyramid = async (req: Request, res: Response) => {
     }
     res.json({
       message: "Tapped Pyramid",
-      user,
+      tapGameHistoryPerDay: user.tap_game_history_per_day,
+      availableTaps: user.current_available_taps
     });
   } catch (error) {
     console.error(error);
