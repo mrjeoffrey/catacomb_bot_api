@@ -233,7 +233,7 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
 
   if (claimableTickets === 0) {
     return res
-      .status(400)
+      .status(200)
       .json({ message: "Tickets already claimed for today" });
   }
 
