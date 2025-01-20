@@ -272,6 +272,7 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
         message: `Claim ${claimableTickets} ticket(s)`,
         claimableTickets,
         ticketsRemaining: user.tickets_remaining,
+        ticketsClaimingHistory: user.tickets_getting_history
       });
   }
 
