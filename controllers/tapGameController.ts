@@ -167,7 +167,8 @@ export const tappingPyramid = async (req: Request, res: Response) => {
 // Helper function to calculate claimable tickets based on constructive days
 const getClaimableTickets = (
   lastClaimDate: Date | null = null,
-  lastClaimTickets: number
+  lastClaimTickets: number,
+  lastlastClaimTickets: number | null = null
 ) => {
   const currentDate = new Date();
 
@@ -180,8 +181,8 @@ const getClaimableTickets = (
   // const oneDayInMs = 24 * 60 * 60 * 1000;
   // const twoDaysInMs = 48 * 60 * 60 * 1000;
 
-  const oneDayInMs = 3 * 60 * 1000;
-  const twoDaysInMs = 6 * 60 * 1000;
+  const oneDayInMs = 1 * 60 * 1000;
+  const twoDaysInMs = 2 * 60 * 1000;
 
   // If more than 48 hours have passed, reset to 1 ticket
   if (timeDifference >= twoDaysInMs) {
@@ -190,6 +191,7 @@ const getClaimableTickets = (
 
   // If between 24 and 48 hours, calculate based on the number of tickets claimed last time
   if (timeDifference >= oneDayInMs) {
+    if(lastlastClaimTickets !== 1 && lastClaimTickets === 1)  return 1;
     return Math.min(lastClaimTickets + 1, 4); // Add 1 ticket up to a maximum of 4
   }
 
@@ -206,13 +208,13 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
 
   const lastClaim = user.tickets_getting_history
     .filter((history) => history.due_to === "daily")
-    .sort((a, b) => b.date.getTime() - a.date.getTime())[0]; // Get the most recent daily claim
+    .sort((a, b) => b.date.getTime() - a.date.getTime()); // Get the most recent daily claim
 
   const currentDate = new Date();
 
-  const claimableTickets = lastClaim
-  ? getClaimableTickets(lastClaim.date, lastClaim.number_of_tickets)
-  : getClaimableTickets(null, 0);
+  const claimableTickets = lastClaim[0]
+  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[1]? lastClaim[1]?.number_of_tickets : null)
+  : getClaimableTickets(null, 0, null);
 
   if (claimableTickets === 0) {
     return res.status(200).json({ message: "Tickets already claimed for today" });
@@ -245,12 +247,12 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
 
   const lastClaim = user.tickets_getting_history
     .filter((history) => history.due_to === "daily")
-    .sort((a, b) => b.date.getTime() - a.date.getTime())[0]; // Get the most recent daily claim
+    .sort((a, b) => b.date.getTime() - a.date.getTime()); // Get the most recent daily claim
 
   // If no previous claim, start fresh
-  const claimableTickets = lastClaim 
-  ? getClaimableTickets(lastClaim.date, lastClaim.number_of_tickets) 
-  : getClaimableTickets(null, 0);
+  const claimableTickets = lastClaim[0]
+  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[1]? lastClaim[1]?.number_of_tickets : null)
+  : getClaimableTickets(null, 0, null);
 
   const message = claimableTickets === 0 
     ? "Tickets already claimed for today" 
