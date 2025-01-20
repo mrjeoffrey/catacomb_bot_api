@@ -41,7 +41,7 @@ const upload = multer({
 });
 
 // Function to decrypt data
-function decryptData(encryptedData) {
+function decryptData(encryptedData: string) {
   try {
     const bytes = CryptoJS.AES.decrypt(encryptedData, JWT_SECRET);
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
@@ -77,7 +77,7 @@ export const getUserTapLevelByUserXp = async (userXp: number) => {
     return tapLevel; // Return the tap level and chest opening time
   } catch (error) {
     console.error('Error getting user tap level:', error);
-    throw new Error(error.message || 'Failed to get user tap level');
+    throw new Error(error + 'Failed to get user tap level');
   }
 };
 
