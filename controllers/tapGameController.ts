@@ -57,12 +57,10 @@ export const getUserTapLevelByUserXp = async (userXp: number) => {
     const { level } = getUserLevel(userXp);
 
     // Find the tap level associated with the user's level
-    const userLevel = await levelModel
-      .findOne({ level })
-      .sort({ level: -1 });
+    const userLevel = await levelModel.findOne({ level }).sort({ level: -1 });
 
     if (!userLevel) {
-      throw new Error('User level not found');
+      throw new Error("User level not found");
     }
 
     // Find the tap level based on the user’s level
@@ -71,13 +69,13 @@ export const getUserTapLevelByUserXp = async (userXp: number) => {
       .sort({ tap_level: -1 });
 
     if (!tapLevel) {
-      throw new Error('Tap level not found for user level');
+      throw new Error("Tap level not found for user level");
     }
 
     return tapLevel; // Return the tap level and chest opening time
   } catch (error) {
-    console.error('Error getting user tap level:', error);
-    throw new Error(error + 'Failed to get user tap level');
+    console.error("Error getting user tap level:", error);
+    throw new Error(error + "Failed to get user tap level");
   }
 };
 
@@ -115,7 +113,7 @@ export const tappingPyramid = async (req: Request, res: Response) => {
     }
 
     // Fetch user's level based on XP
-    const tapLevel = await getUserTapLevelByUserXp(user.xp)
+    const tapLevel = await getUserTapLevelByUserXp(user.xp);
 
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)); // Reset time to 00:00:00
@@ -158,7 +156,7 @@ export const tappingPyramid = async (req: Request, res: Response) => {
     res.json({
       message: "Tapped Pyramid",
       tapGameHistoryPerDay: user.tap_game_history_per_day,
-      availableTaps: user.current_available_taps
+      availableTaps: user.current_available_taps,
     });
   } catch (error) {
     console.error(error);
@@ -179,8 +177,11 @@ const getClaimableTickets = (
 
   const timeDifference =
     currentDate.getTime() - new Date(lastClaimDate).getTime();
-  const oneDayInMs = 24 * 60 * 60 * 1000;
-  const twoDaysInMs = 48 * 60 * 60 * 1000;
+  // const oneDayInMs = 24 * 60 * 60 * 1000;
+  // const twoDaysInMs = 48 * 60 * 60 * 1000;
+
+  const oneDayInMs = 3 * 60 * 1000;
+  const twoDaysInMs = 6 * 60 * 1000;
 
   // If more than 48 hours have passed, reset to 1 ticket
   if (timeDifference >= twoDaysInMs) {
@@ -209,34 +210,15 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
 
   const currentDate = new Date();
 
-  // If no previous claim, start fresh
-  if (!lastClaim) {
-    const claimableTickets = getClaimableTickets(null, 0); // No previous claim, calculate tickets
-    user.tickets_getting_history.push({
-      date: currentDate,
-      number_of_tickets: claimableTickets,
-      due_to: "daily",
-    });
-    user.tickets_remaining += claimableTickets;
-    await user.save();
-    return res.status(200).json({
-      message: `Claim ${claimableTickets} ticket(s)`,
-      ticketsClaimed: claimableTickets,
-      ticketsRemaining: user.tickets_remaining,
-    });
-  }
-
-  const claimableTickets = getClaimableTickets(
-    lastClaim.date,
-    lastClaim.number_of_tickets
-  ); // Calculate tickets based on last claim date
+  const claimableTickets = lastClaim
+  ? getClaimableTickets(lastClaim.date, lastClaim.number_of_tickets)
+  : getClaimableTickets(null, 0);
 
   if (claimableTickets === 0) {
-    return res
-      .status(200)
-      .json({ message: "Tickets already claimed for today" });
+    return res.status(200).json({ message: "Tickets already claimed for today" });
   }
 
+  // Update user history and tickets
   user.tickets_getting_history.push({
     date: currentDate,
     number_of_tickets: claimableTickets,
@@ -244,11 +226,13 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
   });
   user.tickets_remaining += claimableTickets;
   await user.save();
+
   return res.status(200).json({
     message: `Claim ${claimableTickets} ticket(s)`,
     ticketsClaimed: claimableTickets,
     ticketsRemaining: user.tickets_remaining,
   });
+
 };
 
 export const gettingTicketInfo = async (req: Request, res: Response) => {
@@ -264,38 +248,22 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
     .sort((a, b) => b.date.getTime() - a.date.getTime())[0]; // Get the most recent daily claim
 
   // If no previous claim, start fresh
-  if (!lastClaim) {
-    const claimableTickets = getClaimableTickets(null, 0);
-    return res
-      .status(200)
-      .json({
-        message: `Claim ${claimableTickets} ticket(s)`,
-        claimableTickets,
-        ticketsRemaining: user.tickets_remaining,
-        ticketsClaimingHistory: user.tickets_getting_history
-      });
-  }
+  const claimableTickets = lastClaim 
+  ? getClaimableTickets(lastClaim.date, lastClaim.number_of_tickets) 
+  : getClaimableTickets(null, 0);
 
-  const claimableTickets = getClaimableTickets(
-    lastClaim.date,
-    lastClaim.number_of_tickets
-  ); // Calculate tickets based on last claim date
+  const message = claimableTickets === 0 
+    ? "Tickets already claimed for today" 
+    : `Claim ${claimableTickets} ticket(s)`;
 
-  if (claimableTickets === 0) {
-    return res
-      .status(200)
-      .json({
-        message: "Tickets already claimed for today",
-        claimableTickets,
-        ticketsRemaining: user.tickets_remaining,
-        ticketsClaimingHistory: user.tickets_getting_history
-      });
-  }
-
-  return res
-    .status(200)
-    .json({ message: `Claim ${claimableTickets} ticket(s)`, claimableTickets, ticketsRemaining: user.tickets_remaining, ticketsClaimingHistory: user.tickets_getting_history });
-};
+  return res.status(200).json({
+    message,
+    claimableTickets,
+    current_date: new Date(),
+    ticketsRemaining: user.tickets_remaining,
+    ticketsClaimingHistory: user.tickets_getting_history,
+  });
+}
 
 export const ticketToTaps = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;
@@ -310,7 +278,7 @@ export const ticketToTaps = async (req: Request, res: Response) => {
   const tapLevel = await getUserTapLevelByUserXp(user.xp);
   user.current_available_taps += tapLevel.tap_limit_per_ticket;
   await user.save();
-}
+};
 
 export const getAllTapGameLevels = async (req: Request, res: Response) => {
   try {
