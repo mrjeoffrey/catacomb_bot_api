@@ -181,11 +181,8 @@ const getClaimableTickets = (
 
   const timeDifference =
     currentDate.getTime() - new Date(lastClaimDate).getTime();
-  // const oneDayInMs = 24 * 60 * 60 * 1000;
-  // const twoDaysInMs = 48 * 60 * 60 * 1000;
-
-  const oneDayInMs = 1 * 60 * 1000;
-  const twoDaysInMs = 2 * 60 * 1000;
+  const oneDayInMs = 24 * 60 * 60 * 1000;
+  const twoDaysInMs = 48 * 60 * 60 * 1000;
 
   // If more than 48 hours have passed, reset to 1 ticket
   if (timeDifference >= twoDaysInMs) {
