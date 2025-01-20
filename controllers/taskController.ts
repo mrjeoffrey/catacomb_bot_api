@@ -1,10 +1,9 @@
 import { Request, Response } from "express";
-import multer, { MulterError } from "multer";
+import multer from "multer";
 import mime from "mime-types";
 import Task from "../models/taskModel";
-import Settings from "../models/settingsModel";
 import { decodeBase64Image } from "../utils/decodeBase64Image";
-import User, { IUser } from "../models/userModel";
+import User from "../models/userModel";
 import mongoose, { Types } from "mongoose";
 import axios from "axios";
 import { handleReferralRewards } from "./userController";

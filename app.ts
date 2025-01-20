@@ -15,13 +15,15 @@ import levelRoutes from "./routes/levelRoutes";
 import Level from "./models/levelModel";
 import Settings from "./models/settingsModel";
 // import User from "./models/userModel";
-import Admin from "./models/adminModel";
+// import Admin from "./models/adminModel";
 // import Task from "./models/taskModel";
 import stakingRoutes from "./routes/stakingRoutes";
+import tapGameLevelRoutes from "./routes/tapGameLevelRoutes";
 import { PORT } from "./config/config";
 // import { bot } from "./utils/telegramBot";
 // import { handleMenu } from "./bot/handlers";
 import { loadLevelsInMemory } from "./controllers/levelController";
+import tapGameLevelModel from "./models/tapGameLevelModel";
 
 declare module "cors";
 dotenv.config();
@@ -40,8 +42,45 @@ app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 connectDB();
 
 // Seed initial data
-// const seedInitialData = async () => {
-//   try {
+const seedInitialData = async () => {
+  try {
+    // Seed TapGameLevels (if not already seeded)
+    const tapGameLevelCount = await tapGameLevelModel.countDocuments();
+    if (tapGameLevelCount === 0) {
+      const level1 = await Level.find({ level: { $in: [1, 2, 3] } }).exec();
+      const level2 = await Level.find({ level: { $in: [4, 5, 6] } }).exec();
+      const level3 = await Level.find({ level: { $in: [7, 8, 9] } }).exec();
+
+      const initialTapGameLevels = [
+        {
+          tap_level: 1,
+          required_user_levels: level1.map(level => level._id), // Level 1 includes user levels 1, 2, 3
+          xp_earning_per_tap: 1,
+          gold_earning_per_tap: 1,
+          pyramid_image_url: null,
+          tap_limit_per_ticket: 50
+        },
+        {
+          tap_level: 2,
+          required_user_levels: level2.map(level => level._id), // Level 2 includes user levels 4, 5, 6
+          xp_earning_per_tap: 2,
+          gold_earning_per_tap: 2,
+          pyramid_image_url: null,
+          tap_limit_per_ticket: 50
+        },
+        {
+          tap_level: 3,
+          required_user_levels: level3.map(level => level._id), // Level 3 includes user levels 7, 8, 9
+          xp_earning_per_tap: 3,
+          gold_earning_per_tap: 3,
+          pyramid_image_url: null,
+          tap_limit_per_ticket: 50
+        }
+      ];
+
+      await tapGameLevelModel.insertMany(initialTapGameLevels);
+      console.log("Initial TapGame levels seeded.");
+    }
 //     // Seed Levels
 //     const levelCount = await Level.countDocuments();
 //     if (levelCount === 0) {
@@ -140,13 +179,13 @@ connectDB();
 //       await Admin.insertMany(initialAdmins);
 //       console.log("Initial admins seeded.");
 //     }
-//   } catch (error) {
-//     console.error("Error seeding initial data:", error);
-//   }
-// };
+  } catch (error) {
+    console.error("Error seeding initial data:", error);
+  }
+};
 
 // Call seeding function
-// seedInitialData();
+seedInitialData();
 
 loadLevelsInMemory();
 
@@ -157,6 +196,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/levels", levelRoutes);
 app.use("/api/staking", stakingRoutes);
+app.use("/api/tap_game_levels", tapGameLevelRoutes);
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
