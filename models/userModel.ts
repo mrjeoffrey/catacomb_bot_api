@@ -24,6 +24,11 @@ export interface IUser extends Document {
   current_season_xp: number;
   current_season_gold: number;
   limited_time: Date;
+
+  tap_game_history_per_day: {date: Date; xp: number; gold: number}[];
+  tickets_remaining: number;
+  tickets_getting_history: {date: Date; number_of_tickets: number; due_to: "daily" | null}[];
+  current_available_taps: number;
 }
 
 const userSchema: Schema = new Schema({
@@ -66,7 +71,24 @@ const userSchema: Schema = new Schema({
   created_at: { type: Date, default: Date.now },
   current_season_xp: { type: Number, default: 0},
   current_season_gold: { type: Number, default: 0 },
-  limited_time: {type: Date, default:null}
+  limited_time: {type: Date, default:null},
+  
+  tap_game_history_per_day: [
+    {
+      date: { type: Date, required: true, default: Date.now },
+      xp: { type: Number, default: 0 },
+      gold: { type: Number, default: 0 },
+    },
+  ],
+  tickets_remaining: { type: Number, default: 0 },
+  tickets_getting_history: [
+    {
+      date: { type: Date, required: true, default: Date.now },
+      number_of_tickets: { type: Number, required: true },
+      due_to: { type: String, enum: ["daily", null], default: null },
+    },
+  ],
+  current_available_taps: { type: Number, default: 0 },
 });
 
 export default mongoose.model<IUser>("User", userSchema);

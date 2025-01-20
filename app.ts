@@ -18,7 +18,7 @@ import Settings from "./models/settingsModel";
 // import Admin from "./models/adminModel";
 // import Task from "./models/taskModel";
 import stakingRoutes from "./routes/stakingRoutes";
-import tapGameLevelRoutes from "./routes/tapGameLevelRoutes";
+import tapGameRoutes from "./routes/tapGameRoutes";
 import { PORT } from "./config/config";
 // import { bot } from "./utils/telegramBot";
 // import { handleMenu } from "./bot/handlers";
@@ -57,24 +57,24 @@ const seedInitialData = async () => {
           required_user_levels: level1.map(level => level._id), // Level 1 includes user levels 1, 2, 3
           xp_earning_per_tap: 1,
           gold_earning_per_tap: 1,
-          pyramid_image_url: null,
-          tap_limit_per_ticket: 50
+          pyramid_image_url: "https://pub-eb157c13cf5f4c28845c2a603ed21192.r2.dev/Pyramid_01.png",
+          tap_limit_per_ticket: 100
         },
         {
           tap_level: 2,
           required_user_levels: level2.map(level => level._id), // Level 2 includes user levels 4, 5, 6
           xp_earning_per_tap: 2,
           gold_earning_per_tap: 2,
-          pyramid_image_url: null,
-          tap_limit_per_ticket: 50
+          pyramid_image_url: "https://pub-eb157c13cf5f4c28845c2a603ed21192.r2.dev/Pyramid_02.png",
+          tap_limit_per_ticket: 100
         },
         {
           tap_level: 3,
           required_user_levels: level3.map(level => level._id), // Level 3 includes user levels 7, 8, 9
           xp_earning_per_tap: 3,
           gold_earning_per_tap: 3,
-          pyramid_image_url: null,
-          tap_limit_per_ticket: 50
+          pyramid_image_url: "https://pub-eb157c13cf5f4c28845c2a603ed21192.r2.dev/Pyramid_03.png",
+          tap_limit_per_ticket: 100
         }
       ];
 
@@ -196,7 +196,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/levels", levelRoutes);
 app.use("/api/staking", stakingRoutes);
-app.use("/api/tap_game_levels", tapGameLevelRoutes);
+app.use("/api/tap_game", tapGameRoutes);
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

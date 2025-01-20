@@ -49,14 +49,6 @@ export const openChest = async (req: Request, res: Response) => {
       return res.status(500).json({ message: "Settings not found" });
     }
 
-    // Fetch user's level based on XP
-    const level = await levelModel
-      .findOne({ xp_required: { $lte: user.xp } })
-      .sort({ level: -1 });
-    if (!level) {
-      return res.status(400).json({ message: "Level not found" });
-    }
-
      // Get the current time
      const currentTime = new Date();
 

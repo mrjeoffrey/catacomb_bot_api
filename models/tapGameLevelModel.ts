@@ -18,7 +18,7 @@ const tapGameLevelSchema: Schema = new Schema({
   xp_earning_per_tap: { type: Number, required: true}, //1, 2, 3
   gold_earning_per_tap: { type: Number, required: true}, //1, 2, 3;
   pyramid_image_url: { type: String },
-  tap_limit_per_ticket: { type: Number, required: true, default: 50}
+  tap_limit_per_ticket: { type: Number, required: true, default: 100}
 });
 
 export default mongoose.model<ITapGameLevel>("TapGame", tapGameLevelSchema);

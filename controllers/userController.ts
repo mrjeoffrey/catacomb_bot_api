@@ -128,8 +128,6 @@ export const getUsersByPaginationAndFiltering = async (req: Request, res: Respon
   }
 };
 
-
-
 const getRankings = async (current_user: IUser) => {
   // Retrieve all user rankings, comparing current_season_xp and current_season_gold
   const allRankings = await User.aggregate([
