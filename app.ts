@@ -192,7 +192,7 @@ const seedInitialData = async () => {
 seedInitialData();
 
 loadLevelsInMemory();
-removeUnnecessaryChestListInSpecificPeriod(1)
+// removeUnnecessaryChestListInSpecificPeriod(1)
 
 app.use("/api/logs", logRoutes);
 app.use("/api/admin", adminRoutes);
