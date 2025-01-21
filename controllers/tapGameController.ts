@@ -46,7 +46,7 @@ function decryptData(encryptedData: string) {
     console.log(encryptedData, "encryptedData___");
 
     // Decrypt the data
-    const bytes = CryptoJS.AES.decrypt(encryptedData, JWT_SECRET);
+    const bytes = CryptoJS.AES.decrypt(encryptedData, "your_secret_key");
     console.log(bytes, "bytes___");
 
     // Ensure the decrypted bytes are not empty
