@@ -24,7 +24,6 @@ import { PORT } from "./config/config";
 // import { handleMenu } from "./bot/handlers";
 import { loadLevelsInMemory } from "./controllers/levelController";
 import tapGameLevelModel from "./models/tapGameLevelModel";
-import { deleteAllTapGameLevel } from "./controllers/tapGameController";
 
 declare module "cors";
 dotenv.config();
@@ -188,7 +187,6 @@ const seedInitialData = async () => {
   }
 };
 
-// deleteAllTapGameLevel()
 // Call seeding function
 seedInitialData();
 
