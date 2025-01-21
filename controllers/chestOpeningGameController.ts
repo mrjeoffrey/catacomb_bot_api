@@ -3,6 +3,7 @@ import User, { IUser } from "../models/userModel";
 import Settings from "../models/settingsModel";
 import levelModel from "../models/levelModel";
 import { handleReferralRewards } from "./userController";
+import { getUserLevel } from "./levelController";
 
 export const calculateChestOpeningTime = (
   user: any,
@@ -48,52 +49,67 @@ export const openChest = async (req: Request, res: Response) => {
     if (!settings) {
       return res.status(500).json({ message: "Settings not found" });
     }
+    const { seconds_for_next_chest_opening } =
+      getUserLevel(user.xp);
+    // Get the current time
+    const currentTime = new Date();
 
-     // Get the current time
-     const currentTime = new Date();
+    if (user.chest_opened_history && user.chest_opened_history.length > 0) {
+      // Get the last chest opened time
+      const lastChestOpened = user.chest_opened_history[user.chest_opened_history.length - 1];
+      const currentTime = new Date();
 
-     // If limited_time exists, check if the 24-hour cooldown period is over
-     if (user.limited_time) {
-       const timeSinceCooldownStarted = (currentTime.getTime() - new Date(user.limited_time).getTime()) / 1000; // in seconds
- 
-       // If the cooldown is still active (within 24 hours)
-       if (timeSinceCooldownStarted < 24 * 60 * 60) {
-         const remainingTime = 24 * 60 * 60 - timeSinceCooldownStarted; // Remaining cooldown time in seconds
-         const hours = Math.floor(remainingTime / 3600);
-         const minutes = Math.floor((remainingTime % 3600) / 60);
-         const seconds = Math.floor(remainingTime % 60);
- 
-         return res.status(400).json({
-           message: "Daily limit reached",
-           remainingTime: `${hours}:${minutes}:${seconds}`, // Display the countdown in HH:MM:SS format
-           currentTime: currentTime,  // Current time as Date
-           limitedTime: user.limited_time, // limited_time as Date
-         });
-       }
-     }
- 
-     // Check if the user has opened `daily_opening_chests_limit` chests within the last 24 hours
-     const chestsOpenedInLast24Hours = user.chest_opened_history.filter(
-       (chest) => (currentTime.getTime() - new Date(chest.time_opened).getTime()) <= 24 * 60 * 60 * 1000 // 24 hours in milliseconds
-     );
- 
-     // If the user has already opened the max number of chests within 24 hours, trigger the cooldown
-     if (chestsOpenedInLast24Hours.length >= settings.daily_opening_chests_limit) {
-       user.limited_time = currentTime; // Set the limited_time to the current time when the cooldown starts
-       await user.save();
- 
-       const remainingTime = 24 * 60 * 60; // 24 hours cooldown
-       const hours = Math.floor(remainingTime / 3600);
-       const minutes = Math.floor((remainingTime % 3600) / 60);
-       const seconds = Math.floor(remainingTime % 60);
- 
-       return res.status(400).json({
-         message: "Daily limit reached",
-         remainingTime: `${hours}:${minutes}:${seconds}`, // Display the countdown in HH:MM:SS format
-         currentTime: currentTime,  // Current time as Date
-         limitedTime: user.limited_time, // limited_time as Date
-       });
-     }
+      const timeSinceLastOpen = (currentTime.getTime() - new Date(lastChestOpened?.time_opened).getTime()) / 1000; // in seconds
+      if (timeSinceLastOpen < seconds_for_next_chest_opening) {
+        const remainingTime = seconds_for_next_chest_opening - timeSinceLastOpen;
+        return res.status(400).json({
+          message: "Chest opening is not available yet. Please wait",
+          remainingTime,
+        });
+      }
+    }
+    // If limited_time exists, check if the 24-hour cooldown period is over
+    if (user.limited_time) {
+      const timeSinceCooldownStarted = (currentTime.getTime() - new Date(user.limited_time).getTime()) / 1000; // in seconds
+
+      // If the cooldown is still active (within 24 hours)
+      if (timeSinceCooldownStarted < 24 * 60 * 60) {
+        const remainingTime = 24 * 60 * 60 - timeSinceCooldownStarted; // Remaining cooldown time in seconds
+        const hours = Math.floor(remainingTime / 3600);
+        const minutes = Math.floor((remainingTime % 3600) / 60);
+        const seconds = Math.floor(remainingTime % 60);
+
+        return res.status(400).json({
+          message: "Daily limit reached",
+          remainingTime: `${hours}:${minutes}:${seconds}`, // Display the countdown in HH:MM:SS format
+          currentTime: currentTime,  // Current time as Date
+          limitedTime: user.limited_time, // limited_time as Date
+        });
+      }
+    }
+
+    // Check if the user has opened `daily_opening_chests_limit` chests within the last 24 hours
+    const chestsOpenedInLast24Hours = user.chest_opened_history.filter(
+      (chest) => (currentTime.getTime() - new Date(chest.time_opened).getTime()) <= 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+    );
+
+    // If the user has already opened the max number of chests within 24 hours, trigger the cooldown
+    if (chestsOpenedInLast24Hours.length >= settings.daily_opening_chests_limit) {
+      user.limited_time = currentTime; // Set the limited_time to the current time when the cooldown starts
+      await user.save();
+
+      const remainingTime = 24 * 60 * 60; // 24 hours cooldown
+      const hours = Math.floor(remainingTime / 3600);
+      const minutes = Math.floor((remainingTime % 3600) / 60);
+      const seconds = Math.floor(remainingTime % 60);
+
+      return res.status(400).json({
+        message: "Daily limit reached",
+        remainingTime: `${hours}:${minutes}:${seconds}`, // Display the countdown in HH:MM:SS format
+        currentTime: currentTime,  // Current time as Date
+        limitedTime: user.limited_time, // limited_time as Date
+      });
+    }
 
     // Rewards logic
     const golds = settings.opening_chest_earning.golds;
