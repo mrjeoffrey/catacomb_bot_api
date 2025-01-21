@@ -482,7 +482,4 @@ export const deleteTapGameLevel = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteAllTapGameLevel = async () => {
-  const result = await TapGameLevel.deleteMany({});
-}
 export const uploadImage = upload.single("pyramid_image");

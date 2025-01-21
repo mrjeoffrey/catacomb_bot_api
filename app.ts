@@ -188,7 +188,7 @@ const seedInitialData = async () => {
   }
 };
 
-deleteAllTapGameLevel()
+// deleteAllTapGameLevel()
 // Call seeding function
 seedInitialData();
 
