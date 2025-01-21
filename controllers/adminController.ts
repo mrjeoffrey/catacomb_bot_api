@@ -128,7 +128,7 @@ export const removeUnnecessaryChestListInSpecificPeriod = async (
 
     console.log(`Chest list updated for user with telegram_id ${telegram_id}`);
   } catch (error) {
-    console.error(`Error in removeUnnecessaryChestListInSpecificPeriod: ${error.message}`);
+    console.error(`Error in removeUnnecessaryChestListInSpecificPeriod: ${error}`);
   }
 };
 
