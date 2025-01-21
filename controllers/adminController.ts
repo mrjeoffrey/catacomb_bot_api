@@ -74,7 +74,7 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
 
 export const removeUnnecessaryChestListInSpecificPeriod = async (
   season_number: number,
-  telegram_id: string
+  // telegram_id: string
 ) => {
   try {
     // Get the season from SEASONS array based on the season_number
@@ -82,51 +82,50 @@ export const removeUnnecessaryChestListInSpecificPeriod = async (
     if (!season) {
       throw new Error(`Season with number ${season_number} not found.`);
     }
-
-    const user = await User.findOne({ telegram_id });
-    if (!user) {
-      throw new Error(`User with telegram_id ${telegram_id} not found.`);
-    }
-
-    const seasonStart = new Date(season.seasonStart);
-    const seasonEnd = new Date(season.seasonEnd);
-
-    // Filter and aggregate chest entries within the season period
-    let aggregatedXP = 0;
-    let aggregatedGold = 0;
-
-    const filteredHistory = [] as any[];
-    let firstHistoryDate = null as null | Date;
-
-    user.chest_opened_history.forEach((entry) => {
-      const timeOpened = new Date(entry.time_opened);
-
-      if (timeOpened >= seasonStart && timeOpened <= seasonEnd) {
-        if (firstHistoryDate === null) firstHistoryDate = timeOpened;
-        aggregatedXP += entry.xp;
-        aggregatedGold += entry.gold;
-      } else {
-        filteredHistory.push(entry);
-      }
-    });
-
-    // Add the aggregated chest entry for the season period
-    if (aggregatedXP > 0 || aggregatedGold > 0) {
-      filteredHistory.push({
-        time_opened: firstHistoryDate?.toISOString() || seasonEnd.toISOString(),
-        xp: aggregatedXP,
-        gold: aggregatedGold,
-      });
-    }
-
-    // Sort the history by time_opened
-    filteredHistory.sort((a, b) => new Date(a.time_opened).getTime() - new Date(b.time_opened).getTime());
-
-    // Update the user's chest_opened_history with the new filtered list
-    user.chest_opened_history = filteredHistory;
-    await user.save();
-
-    console.log(`Chest list updated for user with telegram_id ${telegram_id}`);
+    const usersList = await User.find();
+    const users = await Promise.all(
+      usersList.map(async (user) => {
+        const seasonStart = new Date(season.seasonStart);
+        const seasonEnd = new Date(season.seasonEnd);
+    
+        // Filter and aggregate chest entries within the season period
+        let aggregatedXP = 0;
+        let aggregatedGold = 0;
+    
+        const filteredHistory = [] as any[];
+        let firstHistoryDate = null as null | Date;
+    
+        user.chest_opened_history.forEach((entry) => {
+          const timeOpened = new Date(entry.time_opened);
+    
+          if (timeOpened >= seasonStart && timeOpened <= seasonEnd) {
+            if (firstHistoryDate === null) firstHistoryDate = timeOpened;
+            aggregatedXP += entry.xp;
+            aggregatedGold += entry.gold;
+          } else {
+            filteredHistory.push(entry);
+          }
+        });
+    
+        // Add the aggregated chest entry for the season period
+        if (aggregatedXP > 0 || aggregatedGold > 0) {
+          filteredHistory.push({
+            time_opened: firstHistoryDate?.toISOString() || seasonEnd.toISOString(),
+            xp: aggregatedXP,
+            gold: aggregatedGold,
+          });
+        }
+    
+        // Sort the history by time_opened
+        filteredHistory.sort((a, b) => new Date(a.time_opened).getTime() - new Date(b.time_opened).getTime());
+    
+        // Update the user's chest_opened_history with the new filtered list
+        user.chest_opened_history = filteredHistory;
+        await user.save();
+    
+        console.log(`Chest list updated for user with telegram_id ${user.username}`);
+      }))
+  
   } catch (error) {
     console.error(`Error in removeUnnecessaryChestListInSpecificPeriod: ${error}`);
   }
