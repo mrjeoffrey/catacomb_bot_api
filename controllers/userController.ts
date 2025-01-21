@@ -162,65 +162,83 @@ const getRankings = async (current_user: IUser) => {
 
 export const getSpecificSeasonXPAndGoldByUser = async (user: IUser, seasonStart: Date, seasonEnd: Date) => {
 
-    // Calculate the user's season XP and gold from chest opened history
-    const chestOpenedThisSeason = user.chest_opened_history.filter(
-      (entry) =>
-        entry.time_opened >= seasonStart && entry.time_opened <= seasonEnd
-    );
+  // Calculate the user's season XP and gold from chest opened history
+  const chestOpenedThisSeason = user.chest_opened_history.filter(
+    (entry) =>
+      entry.time_opened >= seasonStart && entry.time_opened <= seasonEnd
+  );
 
-    const chestSeasonXP = chestOpenedThisSeason.reduce(
-      (sum, entry) => sum + entry.xp,
-      0
-    );
+  const chestSeasonXP = chestOpenedThisSeason.reduce(
+    (sum, entry) => sum + entry.xp,
+    0
+  );
 
-    const chestSeasonGold = chestOpenedThisSeason.reduce(
-      (sum, entry) => sum + entry.gold,
-      0
-    );
+  const chestSeasonGold = chestOpenedThisSeason.reduce(
+    (sum, entry) => sum + entry.gold,
+    0
+  );
 
-    // Calculate XP and gold from validated tasks done this season
-    const tasksDoneThisSeason = user.task_done.filter(
-      (task) =>
-        task.validation_status === "validated" &&
-        task.completed_date >= seasonStart &&
-        task.completed_date <= seasonEnd
-    );
+  // Calculate XP and gold from validated tasks done this season
+  const tasksDoneThisSeason = user.task_done.filter(
+    (task) =>
+      task.validation_status === "validated" &&
+      task.completed_date >= seasonStart &&
+      task.completed_date <= seasonEnd
+  );
 
-    // Assuming task XP and gold are stored in the task model
-    const tasksSeasonRewards = await Task.find({
-      _id: { $in: tasksDoneThisSeason.map((task) => task.task_id) },
-    });
+  // Assuming task XP and gold are stored in the task model
+  const tasksSeasonRewards = await Task.find({
+    _id: { $in: tasksDoneThisSeason.map((task) => task.task_id) },
+  });
 
-    const taskSeasonXP = tasksSeasonRewards.reduce(
-      (sum, task) => sum + task.xp_reward,
-      0
-    );
+  const taskSeasonXP = tasksSeasonRewards.reduce(
+    (sum, task) => sum + task.xp_reward,
+    0
+  );
 
-    const taskSeasonGold = tasksSeasonRewards.reduce(
-      (sum, task) => sum + task.gold_reward,
-      0
-    );
+  const taskSeasonGold = tasksSeasonRewards.reduce(
+    (sum, task) => sum + task.gold_reward,
+    0
+  );
 
-    // Combine XP and gold from chests and tasks
-    const seasonXP = chestSeasonXP + taskSeasonXP;
-    const seasonGold = chestSeasonGold + taskSeasonGold;
+  // Calculate XP and gold from tap_game_history_per_day within the season
+  const tapGameHistoryThisSeason = user.tap_game_history_per_day.filter(
+    (entry) => entry.date >= seasonStart && entry.date <= seasonEnd
+  );
 
-    // Calculate valid referrals this month
-    const validReferralsThisMonth = user.valid_referrals.filter(
-      (referral) =>
-        referral.time_added >= seasonStart && referral.time_added <= seasonEnd
-    );
+  const tapGameSeasonXP = tapGameHistoryThisSeason.reduce(
+    (sum, entry) => sum + entry.xp,
+    0
+  );
 
-    const additionalXP = validReferralsThisMonth.length * 50;
+  const tapGameSeasonGold = tapGameHistoryThisSeason.reduce(
+    (sum, entry) => sum + entry.gold,
+    0
+  );
 
-    // Total season XP including referral XP
-    const totalSeasonXP = seasonXP + additionalXP;
-    return {
-      seasonXP: totalSeasonXP,
-      seasonGold: seasonGold,
-      seasonStart, seasonEnd
-    }
-}
+  // Combine XP and gold from chests, tasks, and tap game history
+  const seasonXP = chestSeasonXP + taskSeasonXP + tapGameSeasonXP;
+  const seasonGold = chestSeasonGold + taskSeasonGold + tapGameSeasonGold;
+
+  // Calculate valid referrals this month
+  const validReferralsThisMonth = user.valid_referrals.filter(
+    (referral) =>
+      referral.time_added >= seasonStart && referral.time_added <= seasonEnd
+  );
+
+  const additionalXP = validReferralsThisMonth.length * 50;
+
+  // Total season XP including referral XP
+  const totalSeasonXP = seasonXP + additionalXP;
+
+  return {
+    seasonXP: totalSeasonXP,
+    seasonGold: seasonGold,
+    seasonStart,
+    seasonEnd,
+  };
+};
+
 
 export const getTotalXpAndGoldByUser = async (user: IUser) => {
   const startDate = new Date("2024-12-24");
@@ -261,9 +279,23 @@ export const getTotalXpAndGoldByUser = async (user: IUser) => {
     0
   );
 
-  // Combine XP and gold from chests and tasks
-  const totalXP = totalChestXP + totalTaskXP;
-  const totalGold = totalChestGold + totalTaskGold;
+  // Calculate total XP and gold from tap game history
+  const totalTapGameXP = user.tap_game_history_per_day.reduce(
+    (sum, entry) => sum + entry.xp,
+    0
+  );
+
+  const totalTapGameGold = user.tap_game_history_per_day.reduce(
+    (sum, entry) => sum + entry.gold,
+    0
+  );
+
+  // Combine all sources of XP and gold
+  const totalXP =
+    totalChestXP + totalTaskXP + totalTapGameXP;
+  const totalGold =
+    totalChestGold + totalTaskGold + totalTapGameGold;
+
 
   // Calculate valid referrals this period (from 2024/12/24 to today)
   const validReferralsThisPeriod = user.valid_referrals.filter(
