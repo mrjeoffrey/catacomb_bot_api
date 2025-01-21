@@ -47,6 +47,7 @@ function decryptData(encryptedData: string) {
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
     return JSON.parse(decrypted);
   } catch (error) {
+    console.log(error)
     throw new Error("Decryption failed");
   }
 }
