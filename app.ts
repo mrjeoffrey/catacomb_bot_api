@@ -24,6 +24,7 @@ import { PORT } from "./config/config";
 // import { handleMenu } from "./bot/handlers";
 import { loadLevelsInMemory } from "./controllers/levelController";
 import tapGameLevelModel from "./models/tapGameLevelModel";
+import { deleteAllTapGameLevel } from "./controllers/tapGameController";
 
 declare module "cors";
 dotenv.config();
@@ -58,7 +59,8 @@ const seedInitialData = async () => {
           xp_earning_per_tap: 1,
           gold_earning_per_tap: 1,
           pyramid_image_url: "https://pub-eb157c13cf5f4c28845c2a603ed21192.r2.dev/Pyramid_01.png",
-          tap_limit_per_ticket: 100
+          tap_limit_per_ticket: 100,
+          pyramid_name: "Sandstone Builder"
         },
         {
           tap_level: 2,
@@ -66,7 +68,8 @@ const seedInitialData = async () => {
           xp_earning_per_tap: 2,
           gold_earning_per_tap: 2,
           pyramid_image_url: "https://pub-eb157c13cf5f4c28845c2a603ed21192.r2.dev/Pyramid_02.png",
-          tap_limit_per_ticket: 100
+          tap_limit_per_ticket: 100,
+          pyramid_name: "Granite Architect",
         },
         {
           tap_level: 3,
@@ -74,7 +77,8 @@ const seedInitialData = async () => {
           xp_earning_per_tap: 3,
           gold_earning_per_tap: 3,
           pyramid_image_url: "https://pub-eb157c13cf5f4c28845c2a603ed21192.r2.dev/Pyramid_03.png",
-          tap_limit_per_ticket: 100
+          tap_limit_per_ticket: 100,
+          pyramid_name: "Pharaoh’s Visionary",
         }
       ];
 
@@ -184,6 +188,7 @@ const seedInitialData = async () => {
   }
 };
 
+deleteAllTapGameLevel()
 // Call seeding function
 seedInitialData();
 
