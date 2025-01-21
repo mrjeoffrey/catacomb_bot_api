@@ -189,23 +189,25 @@ const getClaimableTickets = (
     return {
       claimable: 1,
       resetted: true,
-    }; 
+    };
   }
 
   // If between 24 and 48 hours, calculate based on the number of tickets claimed last time
   if (timeDifference >= oneDayInMs) {
-    if(lastResetStatus)  return  {
+    if (lastResetStatus) return {
       claimable: 1,
       resetted: false,
     };
-    return  {
+    return {
       claimable: Math.min(lastClaimTickets + 1, 4),
       resetted: false,
-    }; ; // Add 1 ticket up to a maximum of 4
+    };; // Add 1 ticket up to a maximum of 4
   }
 
-  return {claimable: 0,
-    resetted: false,}; // Less than 24 hours, no tickets to claim
+  return {
+    claimable: 0,
+    resetted: false,
+  }; // Less than 24 hours, no tickets to claim
 };
 
 export const claimDailyTicket = async (req: Request, res: Response) => {
@@ -223,8 +225,8 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
   const currentDate = new Date();
 
   const claimableTickets = lastClaim[0]
-  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[0]?.resetted)
-  : getClaimableTickets(null, 0, null);
+    ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[0]?.resetted)
+    : getClaimableTickets(null, 0, null);
 
   if (claimableTickets.claimable === 0) {
     return res.status(200).json({ message: "Tickets already claimed for today" });
@@ -263,12 +265,12 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
 
   // If no previous claim, start fresh
   const claimableTickets = lastClaim[0]
-  ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[0]?.resetted)
-  : getClaimableTickets(null, 0, null);
+    ? getClaimableTickets(lastClaim[0].date, lastClaim[0].number_of_tickets, lastClaim[0]?.resetted)
+    : getClaimableTickets(null, 0, null);
 
 
-  const message = claimableTickets.claimable === 0 
-    ? "Tickets already claimed for today" 
+  const message = claimableTickets.claimable === 0
+    ? "Tickets already claimed for today"
     : `Claim ${claimableTickets.claimable} ticket(s)`;
 
   return res.status(200).json({
@@ -406,6 +408,7 @@ export const updateTapGameLevel = async (req: Request, res: Response) => {
       gold_earning_per_tap,
       pyramid_image,
       tap_limit_per_ticket,
+      pyramid_name
     } = req.body;
 
     // Check if the TapGameLevel exists
@@ -443,6 +446,7 @@ export const updateTapGameLevel = async (req: Request, res: Response) => {
     tapGameLevel.pyramid_image_url = imageUrl || tapGameLevel.pyramid_image_url;
     tapGameLevel.tap_limit_per_ticket =
       tap_limit_per_ticket || tapGameLevel.tap_limit_per_ticket;
+    tapGameLevel.pyramid_name = pyramid_name || tapGameLevel.pyramid_name;
 
     await tapGameLevel.save();
     return res.status(200).json({

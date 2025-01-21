@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 export interface ITapGameLevel extends Document {
   tap_level: number;
   required_user_levels: Types.ObjectId[] | null;
+  pyramid_name: string;
   xp_earning_per_tap: number;
   gold_earning_per_tap: number;
   pyramid_image_url: string | null;
@@ -11,6 +12,7 @@ export interface ITapGameLevel extends Document {
 
 const tapGameLevelSchema: Schema = new Schema({
   tap_level: { type: Number, required: true, unique: true },
+  pyramid_name:  { type: String },
   required_user_levels: {
     type: [Types.ObjectId],
     ref: "Level"
