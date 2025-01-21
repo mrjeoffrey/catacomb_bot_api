@@ -62,7 +62,7 @@ export const openChest = async (req: Request, res: Response) => {
       const timeSinceLastOpen = (currentTime.getTime() - new Date(lastChestOpened?.time_opened).getTime()) / 1000; // in seconds
       if (timeSinceLastOpen < seconds_for_next_chest_opening) {
         const remainingTime = seconds_for_next_chest_opening - timeSinceLastOpen;
-        return res.status(400).json({
+        return res.status(200).json({
           message: "Chest opening is not available yet. Please wait",
           remainingTime,
         });
