@@ -8,6 +8,7 @@ import {
   getAllTapGameLevels,
   getTapGameLevelById,
   gettingTicketInfo,
+  tappingPyramid,
   ticketToTaps,
   updateTapGameLevel,
   uploadImage,
@@ -33,5 +34,6 @@ router.get("/level/:id", authenticateTokenForAdmin, getTapGameLevelById);
 router.post("/getting_ticket_info", gettingTicketInfo);
 router.post("/claim_daily_ticket", claimDailyTicket);
 router.post("/ticket_to_taps", ticketToTaps);
+router.post("/tapping-pyramid", tappingPyramid);
 
 export default router;
