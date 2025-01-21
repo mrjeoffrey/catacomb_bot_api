@@ -43,14 +43,29 @@ const upload = multer({
 // Function to decrypt data
 function decryptData(encryptedData: string) {
   try {
-    console.log(encryptedData, "encryptedData___")
+    console.log(encryptedData, "encryptedData___");
+
+    // Decrypt the data
     const bytes = CryptoJS.AES.decrypt(encryptedData, JWT_SECRET);
-    console.log(bytes, "bytes___")
+    console.log(bytes, "bytes___");
+
+    // Ensure the decrypted bytes are not empty
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-    console.log(decrypted, "decrypted___")
-    return JSON.parse(decrypted);
+    console.log(decrypted, "decrypted___");
+
+    if (!decrypted) {
+      throw new Error("Decrypted data is empty");
+    }
+
+    // Try parsing as JSON
+    try {
+      return JSON.parse(decrypted);
+    } catch (jsonError) {
+      throw new Error("Decrypted data is not a valid JSON string");
+    }
+
   } catch (error) {
-    console.log(error)
+    console.error("Decryption Error: ", error);
     throw new Error("Decryption failed");
   }
 }
