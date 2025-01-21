@@ -305,6 +305,9 @@ export const ticketToTaps = async (req: Request, res: Response) => {
   if (user.tickets_remaining < 1) {
     return res.status(400).json({ message: "Not enough tickets" });
   }
+  if(user.current_available_taps > 0) {
+    return res.status(200).json({ message: "Taps are remaining" });
+  }
   user.tickets_remaining--;
   const tapLevel = await getUserTapLevelByUserXp(user.xp);
   user.current_available_taps += tapLevel.tap_limit_per_ticket;
