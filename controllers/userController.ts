@@ -7,6 +7,7 @@ import crypto from "crypto";
 import { isValidObjectId } from "mongoose";
 import { getCurrentSeason } from "../config/config";
 import { calculateChestOpeningTime } from "./chestOpeningGameController";
+import { getUserTapLevelByUserXp } from "./tapGameController";
 
 // Get All Users
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -432,6 +433,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
     // Calculate user level and chest opening time
     const { level, seconds_for_next_chest_opening } =
       getUserLevel(totalXP);
+    
+    const tapLevel = await getUserTapLevelByUserXp(totalXP); 
     const remainingChestOpeningSeconds = calculateChestOpeningTime(
       user,
       seconds_for_next_chest_opening
@@ -471,7 +474,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
       rank: currentUserRank,
       rankings: rankings,
       valid_referrals: validReferrals,
-      seasonStart:seasonStart, seasonEnd: seasonEnd
+      seasonStart:seasonStart, seasonEnd: seasonEnd,
+      tapLevel: tapLevel,
     };
 
     res.json(userInfo);
