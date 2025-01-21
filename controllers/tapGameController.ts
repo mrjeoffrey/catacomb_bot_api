@@ -43,8 +43,11 @@ const upload = multer({
 // Function to decrypt data
 function decryptData(encryptedData: string) {
   try {
+    console.log(encryptedData, "encryptedData___")
     const bytes = CryptoJS.AES.decrypt(encryptedData, JWT_SECRET);
+    console.log(bytes, "bytes___")
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    console.log(decrypted, "decrypted___")
     return JSON.parse(decrypted);
   } catch (error) {
     console.log(error)
