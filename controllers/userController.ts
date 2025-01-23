@@ -13,7 +13,9 @@ import { getUserTapLevelByUserXp } from "./tapGameController";
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     // Fetch all users and populate necessary fields
-    const users = await User.find()
+    const users = await User.find({
+      task_done: { $elemMatch: { task_id: { $ne: null } } },
+    })
       .populate({
         path: "referred_by",
         select: "username _id telegram_id",
