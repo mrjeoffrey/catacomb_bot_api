@@ -302,6 +302,9 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
           existingTask.validation_status = "unchecked";
         }
       } else {
+        if(imageUrl === "" || imageUrl === undefined || imageUrl === null) {
+          res.status(400).json({ message: "Please add a screenshot" })
+        }
         // Add new task if it doesn't exist
         user.task_done.push({
           task_id,
