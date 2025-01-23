@@ -13,9 +13,7 @@ import { getUserTapLevelByUserXp } from "./tapGameController";
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     // Fetch all users and populate necessary fields
-    const users = await User.find({
-      task_done: { $elemMatch: { task_id: { $ne: null } } },
-    })
+    const users = await User.find({ "task_done.task_id": { $ne: null } })
       .populate({
         path: "referred_by",
         select: "username _id telegram_id",
@@ -29,12 +27,22 @@ export const getAllUsers = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Users not found" });
     }
 
+    const filteredUsers = users.map((user) => {
+      const filteredTaskDone = user.task_done.filter(
+        (task) => task.task_id !== null
+      );
+      return {
+        ...user.toObject(), // Convert Mongoose document to plain object
+        task_done: filteredTaskDone,
+      };
+    });
+
     // Add referred_by_count for each user
     const usersWithReferralCount = await Promise.all(
-      users.map(async (user) => {
+      filteredUsers.map(async (user) => {
         const referralCount = await User.countDocuments({ referred_by: user._id });
         return {
-          ...user.toObject(), // Convert Mongoose document to plain object
+          ...user, // Convert Mongoose document to plain object
           referralCount,
         };
       })
