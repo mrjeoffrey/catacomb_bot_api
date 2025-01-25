@@ -248,16 +248,16 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
   // Update user history and tickets
   user.tickets_getting_history.push({
     date: currentDate,
-    number_of_tickets: claimableTickets.claimable,
+    number_of_tickets: claimableTickets.claimable * 5,
     resetted: claimableTickets.resetted,
     due_to: "daily",
   });
-  user.tickets_remaining += claimableTickets.claimable;
+  user.tickets_remaining += claimableTickets.claimable * 5;
   await user.save();
 
   return res.status(200).json({
-    message: `Claim ${claimableTickets.claimable} ticket(s)`,
-    ticketsClaimed: claimableTickets.claimable,
+    message: `Claim ${claimableTickets.claimable * 5} ticket(s)`,
+    ticketsClaimed: claimableTickets.claimable * 5,
     ticketsRemaining: user.tickets_remaining,
     resetted: claimableTickets.resetted,
   });
@@ -284,7 +284,7 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
 
   const message = claimableTickets.claimable === 0
     ? "Tickets already claimed for today"
-    : `Claim ${claimableTickets.claimable} ticket(s)`;
+    : `Claim ${claimableTickets.claimable * 5} ticket(s)`;
 
   return res.status(200).json({
     message,
