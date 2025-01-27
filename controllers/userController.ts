@@ -7,7 +7,7 @@ import crypto from "crypto";
 import { isValidObjectId } from "mongoose";
 import { getCurrentSeason } from "../config/config";
 import { calculateChestOpeningTime } from "./chestOpeningGameController";
-import { getUserTapLevelByUserXp } from "./tapGameController";
+import { canClaimAdTicketToday, getUserTapLevelByUserXp } from "./tapGameController";
 
 // Get All Users
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -502,6 +502,13 @@ export const getUserInfo = async (req: Request, res: Response) => {
       });
 
     const { rankings, currentUserRank } = await getRankings(user);
+    const canClaim = canClaimAdTicketToday(user.tickets_getting_history);
+
+    const claimableAdsgramTicket = canClaim;
+    const AdsgarmMessage = canClaim
+    ? "You can claim Adsgram tickets today."
+    : "Adsgram tickets have already been claimed for today.";
+
     // Convert the Mongoose document to a plain JavaScript object
     const userPlainObject = user.toObject();
     // Add the season_xp, season_gold, totalSeasonXP, rank, and valid referrals
@@ -516,6 +523,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
       rank: currentUserRank,
       rankings: rankings,
       valid_referrals: validReferrals,
+      claimableAdsgramTicket,
+      AdsgarmMessage,
       seasonStart:seasonStart, seasonEnd: seasonEnd,
       tapLevel: tapLevel,
     };

@@ -265,7 +265,7 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
   });
 };
 
-const canClaimAdTicketToday = (ticketsHistory: any[]): boolean => {
+export const canClaimAdTicketToday = (ticketsHistory: any[]): boolean => {
   const currentDate = new Date();
 
   // Find the most recent Adsgram claim
