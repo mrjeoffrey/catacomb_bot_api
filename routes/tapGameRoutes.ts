@@ -34,7 +34,7 @@ router.get("/level/:id", authenticateTokenForAdmin, getTapGameLevelById);
 
 router.post("/getting_ticket_info", gettingTicketInfo);
 router.post("/claim_daily_ticket", claimDailyTicket);
-router.post("/claim_adsgram_ticket", claimAdsgramTicket);
+router.get("/claim_adsgram_ticket/", claimAdsgramTicket);
 
 router.post("/ticket_to_taps", ticketToTaps);
 

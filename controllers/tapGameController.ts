@@ -278,10 +278,9 @@ export const canClaimAdTicketToday = (ticketsHistory: any[]): boolean => {
 };
 
 export const claimAdsgramTicket = async (req: Request, res: Response) => {
-  const { telegram_id } = req.body;
-
+  const { userid } = req.query;
   // Fetch user by Telegram ID
-  const user = await User.findOne({ telegram_id });
+  const user = await User.findOne({ telegram_id: userid });
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
