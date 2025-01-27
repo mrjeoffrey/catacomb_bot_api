@@ -13,6 +13,9 @@ import { JWT_SECRET } from "../config/config";
 import tapGameLevelModel from "../models/tapGameLevelModel";
 import { getUserLevel } from "./levelController";
 
+const oneDayInMs = 24 * 60 * 60 * 1000;
+const twoDaysInMs = 48 * 60 * 60 * 1000;
+
 const fileFilter = (
   req: Request,
   file: Express.Multer.File,
@@ -194,8 +197,7 @@ const getClaimableTickets = (
 
   const timeDifference =
     currentDate.getTime() - new Date(lastClaimDate).getTime();
-  const oneDayInMs = 24 * 60 * 60 * 1000;
-  const twoDaysInMs = 48 * 60 * 60 * 1000;
+
 
   // If more than 48 hours have passed, reset to 1 ticket
   if (timeDifference >= twoDaysInMs) {
@@ -261,8 +263,74 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
     ticketsRemaining: user.tickets_remaining,
     resetted: claimableTickets.resetted,
   });
-
 };
+
+const canClaimAdTicketToday = (ticketsHistory: any[]): boolean => {
+  const currentDate = new Date();
+
+  // Find the most recent Adsgram claim
+  const lastAdClaim = ticketsHistory
+    .filter((history) => history.due_to === "ad")
+    .sort((a, b) => b.date.getTime() - a.date.getTime())[0]; // Get the most recent claim
+
+  // Return true if there's no claim or the last claim was more than 24 hours ago
+  return !lastAdClaim || currentDate.getTime() - lastAdClaim.date.getTime() >= oneDayInMs;
+};
+
+export const checkAdTicketClaimable = async (req: Request, res: Response) => {
+  const { telegram_id } = req.body;
+
+  // Fetch the user by Telegram ID
+  const user = await User.findOne({ telegram_id });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  // Check if the user can claim Adsgram tickets today
+  const canClaim = canClaimAdTicketToday(user.tickets_getting_history);
+
+  return res.status(200).json({
+    claimable: canClaim,
+    message: canClaim
+      ? "You can claim Adsgram tickets today."
+      : "Adsgram tickets have already been claimed for today.",
+  });
+};
+
+export const claimAdsgramTicket = async (req: Request, res: Response) => {
+  const { telegram_id } = req.body;
+
+  // Fetch user by Telegram ID
+  const user = await User.findOne({ telegram_id });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  // Use the helper function to check claim eligibility
+  if (!canClaimAdTicketToday(user.tickets_getting_history)) {
+    return res.status(200).json({ message: "Adsgram tickets already claimed for today" });
+  }
+
+  // Define the number of tickets for Adsgram activity
+  const adsgramTickets = 10;
+
+  // Update the user's ticket history and ticket count
+  user.tickets_getting_history.push({
+    date: new Date(),
+    number_of_tickets: adsgramTickets,
+    resetted: false,
+    due_to: "ad",
+  });
+  user.tickets_remaining += adsgramTickets;
+  await user.save();
+
+  return res.status(200).json({
+    message: `Claimed ${adsgramTickets} ticket(s) from Adsgram activity`,
+    ticketsClaimed: adsgramTickets,
+    ticketsRemaining: user.tickets_remaining,
+  });
+};
+
 
 export const gettingTicketInfo = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;

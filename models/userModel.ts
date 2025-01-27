@@ -27,7 +27,7 @@ export interface IUser extends Document {
 
   tap_game_history_per_day: {date: Date; xp: number; gold: number}[];
   tickets_remaining: number;
-  tickets_getting_history: {date: Date; number_of_tickets: number; due_to: "daily" | null; resetted: boolean}[];
+  tickets_getting_history: {date: Date; number_of_tickets: number; due_to: "daily" | "ad" | null; resetted: boolean}[];
   current_available_taps: number;
 }
 
@@ -85,7 +85,7 @@ const userSchema: Schema = new Schema({
     {
       date: { type: Date, required: true, default: Date.now },
       number_of_tickets: { type: Number, required: true },
-      due_to: { type: String, enum: ["daily", null], default: null },
+      due_to: { type: String, enum: ["daily", null, "ad"], default: null },
       resetted: { type: Boolean, default: false}
     },
   ],
