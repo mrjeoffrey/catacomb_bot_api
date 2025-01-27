@@ -277,26 +277,6 @@ const canClaimAdTicketToday = (ticketsHistory: any[]): boolean => {
   return !lastAdClaim || currentDate.getTime() - lastAdClaim.date.getTime() >= oneDayInMs;
 };
 
-export const checkAdTicketClaimable = async (req: Request, res: Response) => {
-  const { telegram_id } = req.body;
-
-  // Fetch the user by Telegram ID
-  const user = await User.findOne({ telegram_id });
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
-  // Check if the user can claim Adsgram tickets today
-  const canClaim = canClaimAdTicketToday(user.tickets_getting_history);
-
-  return res.status(200).json({
-    claimable: canClaim,
-    message: canClaim
-      ? "You can claim Adsgram tickets today."
-      : "Adsgram tickets have already been claimed for today.",
-  });
-};
-
 export const claimAdsgramTicket = async (req: Request, res: Response) => {
   const { telegram_id } = req.body;
 
@@ -354,12 +334,21 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
     ? "Tickets already claimed for today"
     : `Claim ${claimableTickets.claimable * 5} ticket(s)`;
 
+  const canClaim = canClaimAdTicketToday(user.tickets_getting_history);
+
+  const claimableAdsgramTicket = canClaim;
+  const AdsgarmMessage = canClaim
+  ? "You can claim Adsgram tickets today."
+  : "Adsgram tickets have already been claimed for today.";
+
   return res.status(200).json({
     message,
     claimableTickets,
     current_date: new Date(),
     ticketsRemaining: user.tickets_remaining,
     ticketsClaimingHistory: user.tickets_getting_history,
+    claimableAdsgramTicket,
+    AdsgarmMessage,
     resetted: claimableTickets.resetted
   });
 }
