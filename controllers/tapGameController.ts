@@ -278,6 +278,8 @@ export const canClaimAdTicketToday = (ticketsHistory: any[]): boolean => {
 };
 
 export const claimAdsgramTicket = async (req: Request, res: Response) => {
+  
+  console.log(`${req.query} req.query`)
   const { userid } = req.query;
   // Fetch user by Telegram ID
   const user = await User.findOne({ telegram_id: userid });
@@ -293,6 +295,7 @@ export const claimAdsgramTicket = async (req: Request, res: Response) => {
   // Define the number of tickets for Adsgram activity
   // const adsgramTickets = 10;
   const adsgramTickets = 1;
+  console.log(`${user.username} Claimed ${adsgramTickets} ticket(s) from Adsgram activity`)
 
   // Update the user's ticket history and ticket count
   user.tickets_getting_history.push({
