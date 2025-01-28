@@ -448,14 +448,15 @@ export const removingTaskfromUserTasksStatus = async (
     const taskToRemove = user.task_done[taskIndex];
 
     // Remove the task from the user's task_done array
-    console.log(user.task_done, "user.task_done__BeforeRemove")
+    console.log(user.task_done.length, "user.task_done__BeforeRemove")
     user.task_done.splice(taskIndex, 1);
-    console.log(user.task_done, "user.task_done__AfterRemove");
+    console.log(user.task_done.length, "user.task_done__AfterRemove");
     // Save the updated user document
     await user.save();
 
     res.json({
       message: "Task removed from user's task list, and proof image deleted.",
+      taskToRemove
     });
   } catch (error) {
     console.error(error);
