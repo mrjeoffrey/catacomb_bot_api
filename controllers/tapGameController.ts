@@ -291,7 +291,8 @@ export const claimAdsgramTicket = async (req: Request, res: Response) => {
   }
 
   // Define the number of tickets for Adsgram activity
-  const adsgramTickets = 10;
+  // const adsgramTickets = 10;
+  const adsgramTickets = 1;
 
   // Update the user's ticket history and ticket count
   user.tickets_getting_history.push({
