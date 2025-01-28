@@ -448,8 +448,9 @@ export const removingTaskfromUserTasksStatus = async (
     const taskToRemove = user.task_done[taskIndex];
 
     // Remove the task from the user's task_done array
+    console.log(user.task_done, "user.task_done__BeforeRemove")
     user.task_done.splice(taskIndex, 1);
-
+    console.log(user.task_done, "user.task_done__AfterRemove");
     // Save the updated user document
     await user.save();
 
