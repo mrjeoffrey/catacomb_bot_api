@@ -192,6 +192,7 @@ const getClaimableTickets = (
     return {
       claimable: 1,
       resetted: true,
+      construction_days: 1,
     }; // If no last claim date, return 1 ticket by default
   }
 
@@ -204,6 +205,7 @@ const getClaimableTickets = (
     return {
       claimable: 1,
       resetted: true,
+      construction_days: 1,
     };
   }
 
@@ -212,16 +214,19 @@ const getClaimableTickets = (
     if (lastResetStatus) return {
       claimable: 1,
       resetted: false,
+      construction_days: 2,
     };
     return {
       claimable: Math.min(lastClaimTickets / 5 + 1, 4),
       resetted: false,
-    };; // Add 1 ticket up to a maximum of 4
+      construction_days: lastClaimTickets / 5 + 1,
+    }; // Add 1 ticket up to a maximum of 4
   }
 
   return {
     claimable: 0,
     resetted: false,
+    construction_days: 1,
   }; // Less than 24 hours, no tickets to claim
 };
 
@@ -261,6 +266,7 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
     message: `Claim ${claimableTickets.claimable * 5} tickets`,
     ticketsClaimed: claimableTickets.claimable * 5,
     ticketsRemaining: user.tickets_remaining,
+    constructionDays: claimableTickets.construction_days,
     resetted: claimableTickets.resetted,
   });
 };
@@ -351,6 +357,7 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
     ticketsRemaining: user.tickets_remaining,
     ticketsClaimingHistory: user.tickets_getting_history,
     claimableAdsgramTicket,
+    constructionDays: claimableTickets.construction_days,
     AdsgarmMessage,
     resetted: claimableTickets.resetted
   });
