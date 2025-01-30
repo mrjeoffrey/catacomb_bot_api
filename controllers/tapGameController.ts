@@ -258,7 +258,7 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
   await user.save();
 
   return res.status(200).json({
-    message: `Claim ${claimableTickets.claimable * 5} ticket(s)`,
+    message: `Claim ${claimableTickets.claimable * 5} tickets`,
     ticketsClaimed: claimableTickets.claimable * 5,
     ticketsRemaining: user.tickets_remaining,
     resetted: claimableTickets.resetted,
@@ -293,9 +293,9 @@ export const claimAdsgramTicket = async (req: Request, res: Response) => {
   }
 
   // Define the number of tickets for Adsgram activity
-  // const adsgramTickets = 10;
-  const adsgramTickets = 1;
-  console.log(`${user.username} Claimed ${adsgramTickets} ticket(s) from Adsgram activity`)
+  const adsgramTickets = 10;
+  // const adsgramTickets = 1;
+  console.log(`${user.username} Claimed ${adsgramTickets} tickets from Adsgram activity`)
 
   // Update the user's ticket history and ticket count
   user.tickets_getting_history.push({
@@ -308,7 +308,7 @@ export const claimAdsgramTicket = async (req: Request, res: Response) => {
   await user.save();
 
   return res.status(200).json({
-    message: `Claimed ${adsgramTickets} ticket(s) from Adsgram activity`,
+    message: `Claimed ${adsgramTickets} tickets from Adsgram activity`,
     ticketsClaimed: adsgramTickets,
     ticketsRemaining: user.tickets_remaining,
   });
@@ -335,7 +335,7 @@ export const gettingTicketInfo = async (req: Request, res: Response) => {
 
   const message = claimableTickets.claimable === 0
     ? "Tickets already claimed for today"
-    : `Claim ${claimableTickets.claimable * 5} ticket(s)`;
+    : `Claim ${claimableTickets.claimable * 5} tickets`;
 
   const canClaim = canClaimAdTicketToday(user.tickets_getting_history);
 
