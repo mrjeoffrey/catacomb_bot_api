@@ -226,7 +226,7 @@ const getClaimableTickets = (
   return {
     claimable: 0,
     resetted: false,
-    construction_days: 1,
+    construction_days: lastClaimTickets / 5 + 1,
   }; // Less than 24 hours, no tickets to claim
 };
 
