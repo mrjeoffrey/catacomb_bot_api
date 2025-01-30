@@ -214,7 +214,7 @@ const getClaimableTickets = (
       resetted: false,
     };
     return {
-      claimable: Math.min(lastClaimTickets + 1, 4),
+      claimable: Math.min(lastClaimTickets / 5 + 1, 4),
       resetted: false,
     };; // Add 1 ticket up to a maximum of 4
   }
