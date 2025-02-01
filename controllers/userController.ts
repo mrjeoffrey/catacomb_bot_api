@@ -54,6 +54,22 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
+//Get All Users Basic Infos
+export const getAllUsersBasicInfo = async (req: Request, res: Response) => {
+  try {
+    const users = await User.find({}, "username telegram_id gold xp referral_code blocked");
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: "No users found" });
+    }
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
 export const recalcAllUserInfo = async () => {
   const users = await User.find()
   const usersWithDetails = await Promise.all(
