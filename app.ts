@@ -195,7 +195,7 @@ seedInitialData();
 loadLevelsInMemory();
 
 // removeUnnecessaryChestListInSpecificPeriod(1)
-recalcAllUserInfo();
+// recalcAllUserInfo();
 
 app.use("/api/logs", logRoutes);
 app.use("/api/admin", adminRoutes);
