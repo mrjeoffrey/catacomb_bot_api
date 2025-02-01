@@ -25,6 +25,7 @@ import { PORT } from "./config/config";
 import { loadLevelsInMemory } from "./controllers/levelController";
 import tapGameLevelModel from "./models/tapGameLevelModel";
 import { removeUnnecessaryChestListInSpecificPeriod } from "./controllers/adminController";
+import { recalcAllUserInfo } from "./controllers/userController";
 
 declare module "cors";
 dotenv.config();
@@ -194,6 +195,7 @@ seedInitialData();
 loadLevelsInMemory();
 
 // removeUnnecessaryChestListInSpecificPeriod(1)
+recalcAllUserInfo();
 
 app.use("/api/logs", logRoutes);
 app.use("/api/admin", adminRoutes);

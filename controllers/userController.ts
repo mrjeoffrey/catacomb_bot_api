@@ -54,6 +54,25 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
+export const recalcAllUserInfo = async () => {
+  const users = await User.find()
+  const usersWithDetails = await Promise.all(
+    users.map(async (user) => {
+      const { totalGold, totalXP } = await getTotalXpAndGoldByUser(user)
+
+      user.xp = totalXP;
+      user.gold = totalGold;
+      const { seasonStart, seasonEnd } = getCurrentSeason();
+      const { seasonGold, seasonXP } = await getSpecificSeasonXPAndGoldByUser(user, seasonStart, seasonEnd)
+
+      user.current_season_xp = seasonXP;
+      user.current_season_gold = seasonGold;
+      console.log(user.username, user.current_season_xp);
+      await user.save();
+    }))
+  return usersWithDetails;
+}
+
 //Get Users By Pagination and filtering
 export const getUsersByPaginationAndFiltering = async (req: Request, res: Response) => {
   try {
@@ -317,10 +336,10 @@ export const getTotalXpAndGoldByUser = async (user: IUser) => {
 
   // Total XP including referral XP
   const totalXPWithReferrals = totalXP + additionalXPFromReferrals;
-   return {
+  return {
     totalXP: totalXPWithReferrals,
     totalGold: totalGold,
-   }
+  }
 }
 
 // Get User Info
@@ -461,12 +480,12 @@ export const getUserInfo = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const {totalGold, totalXP} = await getTotalXpAndGoldByUser(user)
+    const { totalGold, totalXP } = await getTotalXpAndGoldByUser(user)
 
     user.xp = totalXP;
     user.gold = totalGold;
     const { seasonStart, seasonEnd } = getCurrentSeason();
-    const {seasonGold, seasonXP} = await getSpecificSeasonXPAndGoldByUser(user, seasonStart, seasonEnd)
+    const { seasonGold, seasonXP } = await getSpecificSeasonXPAndGoldByUser(user, seasonStart, seasonEnd)
 
     user.current_season_xp = seasonXP;
     user.current_season_gold = seasonGold;
@@ -475,8 +494,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
     // Calculate user level and chest opening time
     const { level, seconds_for_next_chest_opening } =
       getUserLevel(totalXP);
-    
-    const tapLevel = await getUserTapLevelByUserXp(totalXP); 
+
+    const tapLevel = await getUserTapLevelByUserXp(totalXP);
     const remainingChestOpeningSeconds = calculateChestOpeningTime(
       user,
       seconds_for_next_chest_opening
@@ -506,8 +525,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
 
     const claimableAdsgramTicket = canClaim;
     const AdsgarmMessage = canClaim
-    ? "You can claim Adsgram tickets today."
-    : "Adsgram tickets have already been claimed for today.";
+      ? "You can claim Adsgram tickets today."
+      : "Adsgram tickets have already been claimed for today.";
 
     // Convert the Mongoose document to a plain JavaScript object
     const userPlainObject = user.toObject();
@@ -525,7 +544,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
       valid_referrals: validReferrals,
       claimableAdsgramTicket,
       AdsgarmMessage,
-      seasonStart:seasonStart, seasonEnd: seasonEnd,
+      seasonStart: seasonStart, seasonEnd: seasonEnd,
       tapLevel: tapLevel,
     };
 
