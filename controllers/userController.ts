@@ -57,7 +57,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
 //Get All Users Basic Infos
 export const getAllUsersBasicInfo = async (req: Request, res: Response) => {
   try {
-    const users = await User.find({}, "username telegram_id gold xp referral_code blocked");
+    const users = await User.find({}, "username telegram_id gold xp referral_code blocked location IP_address created_at");
 
     if (!users || users.length === 0) {
       return res.status(404).json({ message: "No users found" });
