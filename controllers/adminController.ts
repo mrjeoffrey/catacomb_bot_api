@@ -5,9 +5,10 @@ import User from "../models/userModel";
 import Task from "../models/taskModel";
 import Settings from "../models/settingsModel";
 import Level from "../models/levelModel";
-import { JWT_SECRET, SEASONS } from "../config/config";
+import { JWT_SECRET, SEASONS, TELEGRAM_BOT_TOKEN } from "../config/config";
 import { isValidObjectId } from "mongoose";
 import { getSpecificSeasonXPAndGoldByUser } from "./userController";
+import axios from "axios";
 
 // Register Admin
 export const registerAdmin = async (req: Request, res: Response) => {
@@ -37,6 +38,25 @@ export const getSeasonsList = async (req: Request, res: Response) => {
   res.status(200).json(pastSeasons);
 };
 
+async function getFullName(telegramId) {
+  try {
+      const response = await axios.get(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChat`, {
+          params: { chat_id: telegramId }
+      });
+
+      if (response.data.ok) {
+          const chat = response.data.result;
+          const fullName = chat.first_name + (chat.last_name ? ` ${chat.last_name}` : '');
+          console.log('Full Name:', fullName);
+          return fullName;
+      } else {
+          console.error('Error fetching user details:', response.data);
+      }
+  } catch (error) {
+      console.error('Error:', error.message);
+  }
+}
+
 export const getRankingsInSpecificPeriod = async (req: Request, res: Response) => {
   const { season_number } = req.body;
 
@@ -59,6 +79,7 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
         return {
           seasonXP: seasonXP,
           user: user.telegram_id,
+          user_fullname: getFullName(user.telegram_id),
           username: user.username,
         };
       })
