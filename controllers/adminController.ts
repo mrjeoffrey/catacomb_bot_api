@@ -38,7 +38,7 @@ export const getSeasonsList = async (req: Request, res: Response) => {
   res.status(200).json(pastSeasons);
 };
 
-async function getFullName(telegram_id) {
+async function getFullName(telegram_id: number) {
   try {
       const user = await User.findOne(
           { telegram_id },
@@ -65,7 +65,7 @@ async function getFullName(telegram_id) {
       }
       
   } catch (error) {
-      console.error('Error:', error.message);
+      console.error('Error:', error);
   }
 }
 
