@@ -3,6 +3,8 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 export interface IUser extends Document {
   telegram_id: number;
   username: string;
+  first_name: String;
+  last_name: String;
   gold: number;
   xp: number;
   wallet_address: string;
@@ -34,6 +36,8 @@ export interface IUser extends Document {
 const userSchema: Schema = new Schema({
   telegram_id: { type: Number, required: true, unique: true },
   username: { type: String, required: true },
+  first_name: { type: String},
+  last_name: { type: String},
   gold: { type: Number, default: 0 },
   xp: { type: Number, default: 0 },
   wallet_address: { type: String },

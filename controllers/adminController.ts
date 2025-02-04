@@ -38,10 +38,20 @@ export const getSeasonsList = async (req: Request, res: Response) => {
   res.status(200).json(pastSeasons);
 };
 
-async function getFullName(telegramId) {
+async function getFullName(telegram_id) {
   try {
-      const response = await axios.get(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChat`, {
-          params: { chat_id: telegramId }
+      const user = await User.findOne(
+          { telegram_id },
+        );
+      if (!user) {
+        return null;
+      }
+      if(user.first_name && user.first_name !== ""  && user.last_name && user.last_name !== "") {
+        return user.first_name + " " + user.last_name;
+      }
+      else {
+        const response = await axios.get(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChat`, {
+          params: { chat_id: telegram_id }
       });
 
       if (response.data.ok) {
@@ -52,6 +62,8 @@ async function getFullName(telegramId) {
       } else {
           console.error('Error fetching user details:', response.data);
       }
+      }
+      
   } catch (error) {
       console.error('Error:', error.message);
   }

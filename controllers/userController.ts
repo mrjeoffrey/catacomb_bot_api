@@ -433,6 +433,32 @@ export const getUserById = async (req: Request, res: Response) => {
   }
 };
 
+export const editUserFirstOrLastname = async (req: Request, res: Response) => {
+  const { telegram_id } = req.body;
+  let { first_name, last_name } = req.body;
+
+  first_name = first_name || "";
+  last_name = last_name || "";
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { telegram_id },
+      { $set: { first_name, last_name } },
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "User updated successfully", user });
+  } catch (error: any) {
+    console.error(error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
 export const createUser = async (req: Request, res: Response) => {
   const {
     telegram_id,
@@ -442,6 +468,11 @@ export const createUser = async (req: Request, res: Response) => {
     referral_code,
     location,
   } = req.body;
+
+  let { first_name, last_name } = req.body;
+
+  first_name = first_name || "";
+  last_name = last_name || "";
 
   try {
     const existingUser = await User.findOne({ telegram_id });
@@ -463,6 +494,8 @@ export const createUser = async (req: Request, res: Response) => {
     const newUser = new User({
       telegram_id,
       username,
+      first_name,
+      last_name,
       wallet_address,
       IP_address,
       location,
