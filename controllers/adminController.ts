@@ -87,12 +87,15 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
     const users = await Promise.all(
       usersList.map(async (user) => {
         const {seasonXP} = await getSpecificSeasonXPAndGoldByUser(user, seasonStart, seasonEnd)
-
+        let username = user.username
+        if (
+          (user?.first_name && user?.first_name.trim() !== "") || 
+          (user?.last_name && user?.last_name.trim() !== "")
+        ) username = user.first_name + " " + user?.last_name;
         return {
           seasonXP: seasonXP,
           user: user.telegram_id,
-          user_fullname: user.first_name || "" + " " + user.last_name || "",
-          username: user.username,
+          username
         };
       })
     );
