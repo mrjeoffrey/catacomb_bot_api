@@ -1,11 +1,15 @@
 import mongoose from "mongoose";
-import { MONGO_URI } from "../config/config";
+
+export const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/telegram_game";
 
 const connectDB = async () => {
   try {
     await mongoose.connect(MONGO_URI, {
-      serverSelectionTimeoutMS: 30000, // Adjust as needed
-      socketTimeoutMS: 45000, // Adjust as needed
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      family: 4,  // Force IPv4
+      authSource: "admin",
+      directConnection: true,
     });
     console.log("Database connected successfully");
   } catch (error) {

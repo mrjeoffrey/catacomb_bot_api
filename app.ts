@@ -19,6 +19,7 @@ import Settings from "./models/settingsModel";
 // import Task from "./models/taskModel";
 import stakingRoutes from "./routes/stakingRoutes";
 import tapGameRoutes from "./routes/tapGameRoutes";
+import chatRoutes from "./routes/chatRoutes";
 import { PORT } from "./config/config";
 // import { bot } from "./utils/telegramBot";
 // import { handleMenu } from "./bot/handlers";
@@ -26,6 +27,8 @@ import { loadLevelsInMemory } from "./controllers/levelController";
 import tapGameLevelModel from "./models/tapGameLevelModel";
 import { removeUnnecessaryChestListInSpecificPeriod } from "./controllers/adminController";
 import { recalcAllUserInfo } from "./controllers/userController";
+import cron from "node-cron";
+import { checkUserActivityAndSendMessages } from "./controllers/chatController";
 
 declare module "cors";
 dotenv.config();
@@ -197,6 +200,11 @@ loadLevelsInMemory();
 // removeUnnecessaryChestListInSpecificPeriod(1)
 // recalcAllUserInfo();
 
+// Schedule the checkUserActivityAndSendMessages function to run every hour
+cron.schedule("0 * * * *", async () => {
+  await checkUserActivityAndSendMessages();
+});
+
 app.use("/api/logs", logRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
@@ -205,6 +213,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/levels", levelRoutes);
 app.use("/api/staking", stakingRoutes);
 app.use("/api/tap_game", tapGameRoutes);
+app.use("/api/chat", chatRoutes);
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

@@ -8,6 +8,8 @@ import { isValidObjectId } from "mongoose";
 import { getCurrentSeason } from "../config/config";
 import { calculateChestOpeningTime } from "./chestOpeningGameController";
 import { canClaimAdTicketToday, getUserTapLevelByUserXp } from "./tapGameController";
+import { TELEGRAM_BOT_TOKEN } from "../config/config";
+import axios from "axios";
 
 // Get All Users
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -632,3 +634,4 @@ export const handleReferralRewards = async (
     }
   }
 };
+
