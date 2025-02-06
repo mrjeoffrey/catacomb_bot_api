@@ -197,7 +197,7 @@ seedInitialData();
 
 loadLevelsInMemory();
 
-removeUnnecessaryChestListInSpecificPeriod(2)
+// removeUnnecessaryChestListInSpecificPeriod(2)
 // recalcAllUserInfo();
 
 // Schedule the checkUserActivityAndSendMessages function to run every hour
