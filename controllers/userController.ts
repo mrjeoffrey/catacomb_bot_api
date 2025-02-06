@@ -201,8 +201,8 @@ const getRankings = async (current_user: IUser) => {
     (user) => user.telegram_id === current_user?.telegram_id
   );
 
-  // Get the top 15 rankings
-  const topRankings = allRankings.slice(0, 15);
+  // Remove telegram_id from final rankings
+  const topRankings = allRankings.slice(0, 15).map(({ telegram_id, ...rest }) => rest);
 
   return { rankings: topRankings, currentUserRank: currentUserRanking?.rank };
 };

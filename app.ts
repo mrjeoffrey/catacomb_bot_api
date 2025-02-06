@@ -201,9 +201,9 @@ loadLevelsInMemory();
 // recalcAllUserInfo();
 
 // Schedule the checkUserActivityAndSendMessages function to run every hour
-cron.schedule("0 * * * *", async () => {
-  await checkUserActivityAndSendMessages();
-});
+// cron.schedule("0 * * * *", async () => {
+//   await checkUserActivityAndSendMessages();
+// });
 
 app.use("/api/logs", logRoutes);
 app.use("/api/admin", adminRoutes);

@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { getChatHistory, getBotToUserChatHistory, getUserToBotChatHistory, sendTelegramMessage, saveChatMessage } from "../controllers/chatController";
+import { authenticateTokenForAdmin } from "../middlewares/authMiddleware";
 
 const router = Router();
 
-router.post("/send", async (req, res) => {
+router.post("/send",authenticateTokenForAdmin, async (req, res) => {
   const { telegram_id, message } = req.body;
   try {
     const response = await sendTelegramMessage(telegram_id, message);
@@ -14,8 +15,8 @@ router.post("/send", async (req, res) => {
   }
 });
 
-router.get("/:telegram_id", getChatHistory);
-router.get("/bot-to-user/:telegram_id", getBotToUserChatHistory);
-router.get("/user-to-bot/:telegram_id", getUserToBotChatHistory);
+router.get("/:telegram_id",authenticateTokenForAdmin, getChatHistory);
+router.get("/bot-to-user/:telegram_id",authenticateTokenForAdmin, getBotToUserChatHistory);
+router.get("/user-to-bot/:telegram_id",authenticateTokenForAdmin, getUserToBotChatHistory);
 
 export default router;
