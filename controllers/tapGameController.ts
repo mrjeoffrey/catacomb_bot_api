@@ -295,10 +295,10 @@ export const claimAdsgramTicket = async (req: Request, res: Response) => {
   }
 
   // Use the helper function to check claim eligibility
-  if (!canClaimAdTicketToday(user.tickets_getting_history)) {
-    console.log('Adsgram tickets already claimed for today')
-    return res.status(200).json({ message: "Adsgram tickets already claimed for today" });
-  }
+  // if (!canClaimAdTicketToday(user.tickets_getting_history)) {
+  //   console.log('Adsgram tickets already claimed for today')
+  //   return res.status(200).json({ message: "Adsgram tickets already claimed for today" });
+  // }
 
   // Define the number of tickets for Adsgram activity
   const adsgramTickets = 10;
