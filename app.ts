@@ -28,7 +28,7 @@ import tapGameLevelModel from "./models/tapGameLevelModel";
 import { removeUnnecessaryChestListInSpecificPeriod } from "./controllers/adminController";
 import { recalcAllUserInfo } from "./controllers/userController";
 import cron from "node-cron";
-import { checkUserActivityAndSendMessages } from "./controllers/chatController";
+import { checkUserActivityAndSendMessages, sendMassMessage } from "./controllers/chatController";
 
 declare module "cors";
 dotenv.config();

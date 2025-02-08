@@ -4,6 +4,7 @@ import Settings from "../models/settingsModel";
 import levelModel from "../models/levelModel";
 import { handleReferralRewards } from "./userController";
 import { getUserLevel } from "./levelController";
+import { oneDayInMs } from "../config/config";
 
 export const calculateChestOpeningTime = (
   user: any,
@@ -90,7 +91,7 @@ export const openChest = async (req: Request, res: Response) => {
 
     // Check if the user has opened `daily_opening_chests_limit` chests within the last 24 hours
     const chestsOpenedInLast24Hours = user.chest_opened_history.filter(
-      (chest) => (currentTime.getTime() - new Date(chest.time_opened).getTime()) <= 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+      (chest) => (currentTime.getTime() - new Date(chest.time_opened).getTime()) <= oneDayInMs
     );
 
     // If the user has already opened the max number of chests within 24 hours, trigger the cooldown

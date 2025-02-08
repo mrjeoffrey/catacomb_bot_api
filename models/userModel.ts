@@ -3,8 +3,8 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 export interface IUser extends Document {
   telegram_id: number;
   username: string;
-  first_name: String;
-  last_name: String;
+  first_name: string;
+  last_name: string;
   gold: number;
   xp: number;
   wallet_address: string;

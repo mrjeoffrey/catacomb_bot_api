@@ -1,8 +1,12 @@
 import Chat, { IChat } from "../models/chatModel";
 import { Request, Response } from "express";
 import User, { IUser } from "../models/userModel";
-import { TELEGRAM_BOT_TOKEN } from "../config/config";
 import axios from "axios";
+import TelegramBot from 'node-telegram-bot-api';
+import { oneDayInMs, TELEGRAM_BOT_TOKEN } from "../config/config";
+
+const token = TELEGRAM_BOT_TOKEN
+const bot = new TelegramBot(token, { polling: true });
 
 export const saveChatHistory = async (telegram_id: number, message_id: number, text: string, date: Date, from_bot: boolean) => {
   try {
@@ -54,40 +58,15 @@ export const getChatHistory = async (req: Request, res: Response) => {
   }
 };
 
-export const getBotToUserChatHistory = async (req: Request, res: Response) => {
-  const { telegram_id } = req.params;
-
-  try {
-    const chatHistory = await Chat.find({ telegram_id, from_bot: true }).sort({ date: -1 });
-    res.status(200).json(chatHistory);
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error });
-  }
-};
-
-export const getUserToBotChatHistory = async (req: Request, res: Response) => {
-  const { telegram_id } = req.params;
-
-  try {
-    const chatHistory = await Chat.find({ telegram_id, from_bot: false }).sort({ date: -1 });
-    res.status(200).json(chatHistory);
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error });
-  }
-};
-
 export const sendTelegramMessage = async (telegram_id: number, message: string) => {
   try {
-    const response = await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      chat_id: telegram_id,
-      text: message,
-    });
+    const response = await bot.sendMessage(telegram_id, message);
 
     // Save the sent message to chat history
-    await saveChatHistory(telegram_id, response.data.result.message_id, message, new Date(response.data.result.date * 1000), true);
+    await saveChatHistory(telegram_id, response.message_id, message, new Date(response.date * 1000), true);
 
     // Return the response data (chat_id, date, etc.)
-    return response.data;
+    return response;
   } catch (error) {
     console.error("Error sending Telegram message:", error);
     throw error; // rethrow the error to be handled by caller
@@ -132,17 +111,17 @@ export const checkUserActivityAndSendMessages = async () => {
     const messages = [] as string[];
 
     // 1. Player has opened the bot 24 hours ago but still has less than 100 XP.
-    if (user.xp < 100 && (now.getTime() - user.created_at.getTime()) >= 24 * 60 * 60 * 1000) {
+    if (user.xp < 100 && (now.getTime() - user.created_at.getTime()) >= oneDayInMs) {
       messages.push("You have been using the bot for 24 hours but still have less than 100 XP. Start earning more XP now!");
     }
 
     // 2. Player has 1000 XP+ XP but hasn't played/earned anything for 7 days.
-    if (user.xp >= 1000 && (now.getTime() - lastActivity.getTime()) >= 7 * 24 * 60 * 60 * 1000) {
+    if (user.xp >= 1000 && (now.getTime() - lastActivity.getTime()) >= 7 * oneDayInMs) {
       messages.push("You have over 1000 XP but haven't played or earned anything for 7 days. Come back and continue your journey!");
     }
 
     // 3. Player has 10000 XP+ XP but hasn't played/earned anything for 30 days.
-    if (user.xp >= 10000 && (now.getTime() - lastActivity.getTime()) >= 30 * 24 * 60 * 60 * 1000) {
+    if (user.xp >= 10000 && (now.getTime() - lastActivity.getTime()) >= 30 * oneDayInMs) {
       messages.push("You have over 10000 XP but haven't played or earned anything for 30 days. Don't miss out on the fun!");
     }
 
@@ -169,6 +148,37 @@ export const checkUserActivityAndSendMessages = async () => {
     if (messages.length > 0) {
       await sendTelegramMultiMessages(user.telegram_id, messages);
     }
+  }
+};
+
+export const sendMassMessage = async (req: Request, res: Response) => {
+  const { batch, batch_size } = req.body;
+  const range = parseInt(batch) * batch_size;
+  const USER_INFO_API = 'https://bot-api.catacomb.fyi/api/user/basic-info';
+  try {
+    const userInfo = await axios.get(USER_INFO_API);
+    const users = userInfo.data;
+    const userIds = users.map((user: any) => user.telegram_id);
+
+    const MESSAGE = `
+Sample Message   
+    `;
+
+    const startIdx = batch_size * (parseInt(batch) - 1);
+    const userBatch = userIds.slice(startIdx, range);
+
+    for (const userId of userBatch) {
+      try {
+        await sendTelegramMultiMessages(userId, [MESSAGE]);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    res.status(200).send("Success");
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Error sending mass message");
   }
 };
 

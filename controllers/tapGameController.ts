@@ -9,12 +9,11 @@ import { decodeBase64Image } from "../utils/decodeBase64Image";
 import { uploadImageToR2 } from "../utils/uploadImageToR2";
 import User from "../models/userModel";
 import levelModel from "../models/levelModel";
-import { JWT_SECRET } from "../config/config";
+import { JWT_SECRET, oneDayInMs } from "../config/config";
 import tapGameLevelModel from "../models/tapGameLevelModel";
 import { getUserLevel } from "./levelController";
 
-const oneDayInMs = 24 * 60 * 60 * 1000;
-const twoDaysInMs = 48 * 60 * 60 * 1000;
+
 
 const fileFilter = (
   req: Request,
@@ -115,7 +114,7 @@ export const tappingPyramid = async (req: Request, res: Response) => {
         message: "number_clicked must be a valid number",
       });
     }
-    console.log("Decrypted Data:", { number_clicked: decryptedNumber });
+    // console.log("Decrypted Data:", { number_clicked: decryptedNumber });
 
     const user = await User.findOne({ telegram_id });
     if (!user) {
@@ -201,7 +200,7 @@ const getClaimableTickets = (
 
 
   // If more than 48 hours have passed, reset to 1 ticket
-  if (timeDifference >= twoDaysInMs) {
+  if (timeDifference >= (oneDayInMs * 2)) {
     return {
       claimable: 1,
       resetted: true,
@@ -290,11 +289,13 @@ export const claimAdsgramTicket = async (req: Request, res: Response) => {
   // Fetch user by Telegram ID
   const user = await User.findOne({ telegram_id: userid });
   if (!user) {
+    console.log('User Not FOund!')
     return res.status(404).json({ message: "User not found" });
   }
 
   // Use the helper function to check claim eligibility
   if (!canClaimAdTicketToday(user.tickets_getting_history)) {
+    console.log('Adsgram tickets already claimed for today')
     return res.status(200).json({ message: "Adsgram tickets already claimed for today" });
   }
 
