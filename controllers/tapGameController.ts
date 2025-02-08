@@ -288,7 +288,7 @@ export const claimAdsgramTicket = async (req: Request, res: Response) => {
   const { userid } = req.query;
   console.log(`${userid} req.query ${typeof userid}`)
   // Fetch user by Telegram ID
-  const user = await User.findOne({ telegram_id: userid });
+  const user = await User.findOne({ telegram_id: Number(userid) });
   if (!user) {
     console.log('User Not FOund!')
     return res.status(404).json({ message: "User not found" });
