@@ -106,45 +106,56 @@ let userLevelsCache: {
   [key: string]: {
     level: number;
     seconds_for_next_chest_opening: number;
+    percentage_to_next_level: number;
     expiry: number;
   };
 } = {};
 
 export const getUserLevel = (
   userXp: number
-): { level: number; seconds_for_next_chest_opening: number } => {
+): { level: number; seconds_for_next_chest_opening: number, percentage_to_next_level: number } => {
   // Check if the level is cached and not expired
   const cached = userLevelsCache[userXp];
   if (cached && cached.expiry > Date.now()) {
     return {
       level: cached.level,
       seconds_for_next_chest_opening: cached.seconds_for_next_chest_opening,
+      percentage_to_next_level: cached.percentage_to_next_level
     }; // Return cached level and chest opening seconds
   }
 
   // If not cached, calculate the level
-  const { level, seconds_for_next_chest_opening } = calculateUserLevel(userXp);
+  const { level, seconds_for_next_chest_opening, percentage_to_next_level } = calculateUserLevel(userXp);
 
   // Cache the level for 30 seconds
   userLevelsCache[userXp] = {
     level,
     seconds_for_next_chest_opening,
+    percentage_to_next_level,
     expiry: Date.now() + 30000, // Cache expires in 30 seconds
   };
 
-  return { level, seconds_for_next_chest_opening };
+  return { level, seconds_for_next_chest_opening, percentage_to_next_level };
 };
 
 const calculateUserLevel = (
   userXp: number
-): { level: number; seconds_for_next_chest_opening: number } => {
+): { level: number; seconds_for_next_chest_opening: number; percentage_to_next_level: number } => {
   let userLevel = 1;
   let secondsForNextChest = 0;
+  let percentageToNextLevel = 100;
 
-  for (const level of levelsCache) {
+  for (let i = 0; i < levelsCache.length; i++) {
+    const level = levelsCache[i];
     if (userXp >= level.xp_required) {
       userLevel = level.level;
       secondsForNextChest = level.seconds_for_next_chest_opening;
+      if (i < levelsCache.length - 1) {
+        const nextLevelXp = levelsCache[i + 1].xp_required;
+        percentageToNextLevel = ((userXp - level.xp_required) / (nextLevelXp - level.xp_required)) * 100;
+      } else {
+        percentageToNextLevel = 100;
+      }
     } else {
       break;
     }
@@ -153,5 +164,6 @@ const calculateUserLevel = (
   return {
     level: userLevel,
     seconds_for_next_chest_opening: secondsForNextChest,
+    percentage_to_next_level: percentageToNextLevel,
   };
 };

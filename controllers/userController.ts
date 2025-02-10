@@ -543,7 +543,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
 
     await user.save();
     // Calculate user level and chest opening time
-    const { level, seconds_for_next_chest_opening } =
+    const { level, seconds_for_next_chest_opening, percentage_to_next_level } =
       getUserLevel(totalXP);
 
     const tapLevel = await getUserTapLevelByUserXp(totalXP);
@@ -586,7 +586,8 @@ export const getUserInfo = async (req: Request, res: Response) => {
       ...userPlainObject,
       season_xp: seasonXP,
       season_gold: seasonGold,
-      level: level,
+      level,
+      percentage_to_next_level,
       currentTime: new Date(),
       seconds: seconds_for_next_chest_opening,
       remainingSeconds: remainingChestOpeningSeconds,
