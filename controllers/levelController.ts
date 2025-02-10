@@ -152,7 +152,7 @@ const calculateUserLevel = (
       secondsForNextChest = level.seconds_for_next_chest_opening;
       if (i < levelsCache.length - 1) {
         const nextLevelXp = levelsCache[i + 1].xp_required;
-        percentageToNextLevel = ((userXp - level.xp_required) / (nextLevelXp - level.xp_required)) * 100;
+        percentageToNextLevel = (userXp / nextLevelXp) * 100;
       } else {
         percentageToNextLevel = 100;
       }
