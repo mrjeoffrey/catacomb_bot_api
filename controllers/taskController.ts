@@ -163,47 +163,89 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Ensure atomicity by using a session
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    const existingTask = user.task_done.find(
+      (task) => task.task_id.toString() === task_id
+    );
+
+    if (existingTask && existingTask?.validation_status === "validated") {
+      await session.abortTransaction();
+      session.endSession();
+      return res.json({
+        message: "You have already done this task.",
+      });
+    }
+
     if (task.is_auto_check) {
-      const existingTask = user.task_done.find(
-        (task) => task.task_id.toString() === task_id
-      );
-
-      if (existingTask && existingTask?.validation_status === "validated") {
-        return res.json({
-          message: "You have already done this task.",
-        });
-      } else {
-        // Telegram group check logic
-        if (task.group_bot_token) {
-          const chat_id = task.link.split("/").pop(); // Extract @group_name from the link
-          const bot_token = task.group_bot_token || null;
-
-          const response = await axios.get(
-            `https://api.telegram.org/bot${bot_token}/getChatMember`,
-            {
-              params: {
-                chat_id: `@${chat_id}`,
-                user_id: telegram_id,
-              },
+      if (task.is_auto_check) {
+        const existingTask = user.task_done.find(
+          (task) => task.task_id.toString() === task_id
+        );
+  
+        if (existingTask && existingTask?.validation_status === "validated") {
+          return res.json({
+            message: "You have already done this task.",
+          });
+        } else {
+          // Telegram group check logic
+          if (task.group_bot_token) {
+            const chat_id = task.link.split("/").pop(); // Extract @group_name from the link
+            const bot_token = task.group_bot_token || null;
+  
+            const response = await axios.get(
+              `https://api.telegram.org/bot${bot_token}/getChatMember`,
+              {
+                params: {
+                  chat_id: `@${chat_id}`,
+                  user_id: telegram_id,
+                },
+              }
+            );
+  
+            const chatMember = response.data;
+  
+  
+            if (!chatMember.ok || chatMember.result.status === "left") {
+              return res.status(400).json({
+                message: "User is not a member of the required Telegram group.",
+              });
             }
-          );
-
-          const chatMember = response.data;
-
-
-          if (!chatMember.ok || chatMember.result.status === "left") {
-            return res.status(400).json({
-              message: "User is not a member of the required Telegram group.",
-            });
-          }
-
-          if (task?.cashtag_for_username && task?.cashtag_for_username !== "") {
-            if ((chatMember.result.user.first_name && chatMember.result.user.first_name.includes(task?.cashtag_for_username))
-              || (chatMember.result.user.last_name && chatMember.result.user.last_name.includes(task?.cashtag_for_username))) {
+  
+            if (task?.cashtag_for_username && task?.cashtag_for_username !== "") {
+              if ((chatMember.result.user.first_name && chatMember.result.user.first_name.includes(task?.cashtag_for_username))
+                || (chatMember.result.user.last_name && chatMember.result.user.last_name.includes(task?.cashtag_for_username))) {
+                await handleReferralRewards(user, task.gold_reward);
+                await user.save();
+  
+                // If user is in the group & has specific cashtag at his username, directly validate the task
+                user.task_done.push({
+                  task_id,
+                  proof_img: "", // No proof image needed
+                  proof_url: url || "", // Optional proof URL
+                  completed_date: new Date(),
+                  validation_status: "validated", // Directly mark as validated
+                });
+  
+                await user.save();
+  
+                return res.json({
+                  message:
+                    "Task validated successfully as the user has cashtag in User Name.",
+                });
+              } else {
+                return res.status(400).json({
+                  message: "User hasnt got cashtag in User Name.",
+                });
+              }
+            } else {
+              // Handle referral logic
               await handleReferralRewards(user, task.gold_reward);
               await user.save();
-
-              // If user is in the group & has specific cashtag at his username, directly validate the task
+  
+              // If user is in the group, directly validate the task
               user.task_done.push({
                 task_id,
                 proof_img: "", // No proof image needed
@@ -211,24 +253,22 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
                 completed_date: new Date(),
                 validation_status: "validated", // Directly mark as validated
               });
-
+  
               await user.save();
-
+  
               return res.json({
                 message:
-                  "Task validated successfully as the user has cashtag in User Name.",
-              });
-            } else {
-              return res.status(400).json({
-                message: "User hasnt got cashtag in User Name.",
+                  "Task validated successfully as the user is in the required group.",
               });
             }
+  
           } else {
+            //Just auto checking
             // Handle referral logic
             await handleReferralRewards(user, task.gold_reward);
             await user.save();
-
-            // If user is in the group, directly validate the task
+  
+            // If user request validate, directly validate the task
             user.task_done.push({
               task_id,
               proof_img: "", // No proof image needed
@@ -236,35 +276,13 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
               completed_date: new Date(),
               validation_status: "validated", // Directly mark as validated
             });
-
+  
             await user.save();
-
+  
             return res.json({
-              message:
-                "Task validated successfully as the user is in the required group.",
+              message: "Task validated successfully as the user checked task.",
             });
           }
-
-        } else {
-          //Just auto checking
-          // Handle referral logic
-          await handleReferralRewards(user, task.gold_reward);
-          await user.save();
-
-          // If user request validate, directly validate the task
-          user.task_done.push({
-            task_id,
-            proof_img: "", // No proof image needed
-            proof_url: url || "", // Optional proof URL
-            completed_date: new Date(),
-            validation_status: "validated", // Directly mark as validated
-          });
-
-          await user.save();
-
-          return res.json({
-            message: "Task validated successfully as the user checked task.",
-          });
         }
       }
     } else {
@@ -281,16 +299,16 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
           // Upload image to Cloudflare R2
           imageUrl = await uploadImageToR2(fileData.data, uniqueFileName);
         } catch (error) {
+          await session.abortTransaction();
+          session.endSession();
           return res.status(400).json({ message: "Invalid image format" });
         }
       }
 
-      const existingTask = user.task_done.find(
-        (task) => task.task_id.toString() === task_id
-      );
-
       if (existingTask) {
         if (existingTask?.validation_status === "validated") {
+          await session.abortTransaction();
+          session.endSession();
           return res.json({
             message: "You have already done this task.",
           });
@@ -302,8 +320,10 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
           existingTask.validation_status = "unchecked";
         }
       } else {
-        if(imageUrl === "" || imageUrl === undefined || imageUrl === null) {
-          return res.status(400).json({ message: "Please add a screenshot" })
+        if (imageUrl === "" || imageUrl === undefined || imageUrl === null) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(400).json({ message: "Please add a screenshot" });
         }
         // Add new task if it doesn't exist
         user.task_done.push({
@@ -316,7 +336,10 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
       }
 
       // Save user data
-      await user.save();
+      await user.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
 
       res.json({
         message:
@@ -552,6 +575,40 @@ export const removeTask = async (req: Request, res: Response) => {
     res.json({ message: "Task removed successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getUsersWithUncheckedTasks = async (req: Request, res: Response) => {
+  try {
+    const users = await User.find({ "task_done.validation_status": "unchecked" })
+      .populate({
+        path: "task_done.task_id",
+        select: "name link avatar_url gold_reward xp_reward",
+      });
+
+    const result = users
+      .map(user => {
+        return user.task_done
+          .filter(task => task.validation_status === "unchecked")
+          .map(task => ({
+            task_id: task.task_id,
+            proof_img: task?.proof_img,
+            _id: user?._id || null,
+            username: user.username,
+            time: task?.completed_date,
+            telegram_id: user?.telegram_id
+          }));
+      })
+      .flat()
+      .sort((a, b) => {
+        const dateA = new Date(a.time).getTime() || 0;
+        const dateB = new Date(b.time).getTime() || 0;
+        return dateB - dateA;
+      });
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
