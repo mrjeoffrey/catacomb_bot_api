@@ -380,39 +380,44 @@ export const checkTask = async (req: Request, res: Response) => {
 
 // Complete Task
 export const validateTask = async (req: Request, res: Response) => {
-  const { telegram_id, task_id } = req.body;
+  const { telegram_id, task_ids } = req.body; // task_ids is an array of task IDs
   try {
     const user = await User.findOne({ telegram_id });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const task = await Task.findById(task_id);
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
-    }
-    const updatedUser = await User.findOneAndUpdate(
-      {
-        telegram_id,
-        "task_done.task_id": new mongoose.Types.ObjectId(task_id),
-      },
-      {
-        $set: { "task_done.$.validation_status": "validated" },
-      },
-      {
-        new: true,
-      }
-    );
 
-    // Handle referral logic
-    await handleReferralRewards(user, task.gold_reward);
+    for (const task_id of task_ids) {
+      const task = await Task.findById(task_id);
+      if (!task) {
+        return res.status(404).json({ message: `Task not found: ${task_id}` });
+      }
+
+      await User.findOneAndUpdate(
+        {
+          telegram_id,
+          "task_done.task_id": new mongoose.Types.ObjectId(task_id),
+        },
+        {
+          $set: { "task_done.$.validation_status": "validated" },
+        },
+        {
+          new: true,
+        }
+      );
+
+      // Handle referral logic
+      await handleReferralRewards(user, task.gold_reward);
+    }
+
     await user.save();
 
-    res.json({
+    return res.json({
       message: "The task validation has been completed.",
-      updatedUser,
+      user,
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -421,12 +426,7 @@ export const removingTaskfromUserTasksStatus = async (
   req: Request,
   res: Response
 ) => {
-  const { telegram_id, task_id } = req.body;
-
-  // Check if the task_id is a valid ObjectId
-  if (!mongoose.Types.ObjectId.isValid(task_id)) {
-    return res.status(400).json({ message: "Invalid task ID" });
-  }
+  const { telegram_id, task_ids } = req.body; // task_ids is an array of task IDs
 
   try {
     const user = await User.findOne({ telegram_id });
@@ -434,33 +434,31 @@ export const removingTaskfromUserTasksStatus = async (
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Convert task_id to ObjectId
-    const objectIdTask = new mongoose.Types.ObjectId(task_id);
-    // Find the task to remove
-    const taskIndex = user.task_done.findIndex(
-      (task) => task.task_id.toString() === objectIdTask.toString()
-    );
+    for (const task_id of task_ids) {
+      if (!mongoose.Types.ObjectId.isValid(task_id)) {
+        return res.status(400).json({ message: `Invalid task ID: ${task_id}` });
+      }
 
-    if (taskIndex === -1) {
-      return res.status(404).json({ message: "Task not found for this user" });
+      const objectIdTask = new mongoose.Types.ObjectId(task_id);
+      const taskIndex = user.task_done.findIndex(
+        (task) => task.task_id.toString() === objectIdTask.toString()
+      );
+
+      if (taskIndex === -1) {
+        return res.status(404).json({ message: `Task not found for this user: ${task_id}` });
+      }
+
+      user.task_done.splice(taskIndex, 1);
     }
 
-    const taskToRemove = user.task_done[taskIndex];
-
-    // Remove the task from the user's task_done array
-    console.log(user.task_done.length, "user.task_done__BeforeRemove")
-    user.task_done.splice(taskIndex, 1);
-    console.log(user.task_done.length, "user.task_done__AfterRemove");
-    // Save the updated user document
     await user.save();
 
-    res.json({
-      message: "Task removed from user's task list, and proof image deleted.",
-      taskToRemove
+    return res.json({
+      message: "Tasks removed from user's task list, and proof images deleted.",
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
