@@ -163,17 +163,11 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Ensure atomicity by using a session
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     const existingTask = user.task_done.find(
       (task) => task.task_id.toString() === task_id
     );
 
     if (existingTask && existingTask?.validation_status === "validated") {
-      await session.abortTransaction();
-      session.endSession();
       return res.json({
         message: "You have already done this task.",
       });
@@ -299,16 +293,12 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
           // Upload image to Cloudflare R2
           imageUrl = await uploadImageToR2(fileData.data, uniqueFileName);
         } catch (error) {
-          await session.abortTransaction();
-          session.endSession();
           return res.status(400).json({ message: "Invalid image format" });
         }
       }
 
       if (existingTask) {
         if (existingTask?.validation_status === "validated") {
-          await session.abortTransaction();
-          session.endSession();
           return res.json({
             message: "You have already done this task.",
           });
@@ -321,8 +311,6 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
         }
       } else {
         if (imageUrl === "" || imageUrl === undefined || imageUrl === null) {
-          await session.abortTransaction();
-          session.endSession();
           return res.status(400).json({ message: "Please add a screenshot" });
         }
         // Add new task if it doesn't exist
@@ -336,10 +324,7 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
       }
 
       // Save user data
-      await user.save({ session });
-
-      await session.commitTransaction();
-      session.endSession();
+      await user.save();
 
       res.json({
         message:
