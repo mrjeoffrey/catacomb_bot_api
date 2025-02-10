@@ -589,7 +589,7 @@ export const getUsersWithUncheckedTasks = async (req: Request, res: Response) =>
     const result = users
       .map(user => {
         return user.task_done
-          .filter(task => task.validation_status === "unchecked")
+          .filter(task => task.validation_status === "unchecked" && task.task_id)
           .map(task => ({
             task_id: task.task_id,
             proof_img: task?.proof_img,
