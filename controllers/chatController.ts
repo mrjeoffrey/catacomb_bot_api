@@ -131,7 +131,7 @@ export const checkUserActivityAndSendMessages = async () => {
 
   for (const user of users) {
     if (
-      [6430530130, 403768635, 7095784339, 5988754753].includes(user.telegram_id)
+      [6430530130, 403768635, 5988754753].includes(user.telegram_id)
     ) {
       const lastActivity =
         user.task_done.length > 0
