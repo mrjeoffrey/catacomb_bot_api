@@ -34,22 +34,6 @@ export const saveChatHistory = async (
   }
 };
 
-export const saveChatMessage = async (telegram_id: number, message: string) => {
-  try {
-    const newChat = new Chat({
-      telegram_id,
-      message_id: Date.now(),
-      text: message,
-      date: new Date(),
-      from_bot: false,
-    });
-
-    await newChat.save();
-  } catch (error) {
-    console.error("Error saving chat message:", error);
-  }
-};
-
 export const getChatHistory = async (req: Request, res: Response) => {
   const { telegram_id } = req.params;
 
@@ -70,7 +54,7 @@ export const sendTelegramMessage = async (
     const response = await axios.post(`${BOT_API_URL}/send-messages`, [
       { telegram_id, message },
     ]);
-
+    console.log({ telegram_id, message }, "------------Sent Private message------------")
     // Save the sent message to chat history
     await saveChatHistory(
       telegram_id,
@@ -172,7 +156,7 @@ export const checkUserActivityAndSendMessages = async () => {
 
       if (
         now.getTime() - lastCheckIn.getTime() >=
-         oneDayInMs + oneHourInMs &&
+        (oneDayInMs + oneHourInMs) &&
         !user.tickets_getting_history.some(
           (entry) => entry.date.toDateString() === now.toDateString()
         )
@@ -231,7 +215,6 @@ export const checkUserActivityAndSendMessages = async () => {
   }
 
   try {
-    console.log(messagesToSend, "__________________")
     await axios.post(`${BOT_API_URL}/send-messages`, messagesToSend);
     for (const { telegram_id, message, reason } of messagesToSend) {
       await saveChatHistory(telegram_id, Date.now(), message, new Date(), true, reason);
@@ -250,9 +233,9 @@ export const sendMassMessage = async (req: Request, res: Response) => {
       message,
       reason: "Mass message",
     }));
-
-    await axios.post(`${BOT_API_URL}/send-messages`, messagesToSend);
-
+    
+    await axios.post(`${BOT_API_URL}/send-messages`, message);
+    console.log(message, "------------Sent Mass message------------")
     for (const { telegram_id, message, reason } of messagesToSend) {
       await saveChatHistory(telegram_id, Date.now(), message, new Date(), true, reason);
     }
