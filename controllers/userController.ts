@@ -4,7 +4,7 @@ import Settings from "../models/settingsModel";
 import Task, { ITask } from "../models/taskModel";
 import { getUserLevel } from "./levelController";
 import crypto from "crypto";
-import { isValidObjectId } from "mongoose";
+import { isValidObjectId, Types } from "mongoose";
 import { getCurrentSeason } from "../config/config";
 import { calculateChestOpeningTime } from "./chestOpeningGameController";
 import { canClaimAdTicketToday, getUserTapLevelByUserXp } from "./tapGameController";
@@ -637,7 +637,7 @@ export const handleReferralRewards = async (
 };
 
 // Function to get all users referred by a specific user
-export const getUsersReferredByUser = async (userId: string): Promise<IUser[]> => {
+export const getUsersReferredByUser = async (userId: Types.ObjectId): Promise<IUser[]> => {
   try {
     const users = await User.find({ referred_by: userId })
       .populate({
@@ -648,7 +648,7 @@ export const getUsersReferredByUser = async (userId: string): Promise<IUser[]> =
         path: "task_done.task_id",
         select: "name link avatar_url gold_reward xp_reward",
       });
-
+    console.log(users, "_________________________")
     return users;
   } catch (error) {
     console.error("Error fetching users referred by user:", error);
