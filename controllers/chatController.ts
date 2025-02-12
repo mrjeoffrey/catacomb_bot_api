@@ -89,6 +89,7 @@ const sendMessagesInBatches = async (messages: any[], batchSize: number, delay: 
     const batch = messages.slice(i, i + batchSize);
     try {
       await axios.post(`${BOT_API_URL}/send-messages`, batch);
+      console.log(batch, "___________Sent_Messages_________________")
       for (const { telegram_id, message, reason } of batch) {
         await saveChatHistory(telegram_id, Date.now(), message, new Date(), true, reason);
       }
