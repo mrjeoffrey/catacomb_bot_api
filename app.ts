@@ -205,6 +205,11 @@ loadLevelsInMemory();
 //   await checkUserActivityAndSendMessages();
 // });
 
+// Schedule the checkUserActivityAndSendMessages function to run every minute
+cron.schedule("* * * * *", async () => {
+  await checkUserActivityAndSendMessages();
+});
+
 app.use("/api/logs", logRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);

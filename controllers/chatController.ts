@@ -2,13 +2,25 @@ import Chat, { IChat } from "../models/chatModel";
 import { Request, Response } from "express";
 import User, { IUser } from "../models/userModel";
 import axios from "axios";
-import TelegramBot from 'node-telegram-bot-api';
-import { oneDayInMs, TELEGRAM_BOT_TOKEN } from "../config/config";
+import TelegramBot from "node-telegram-bot-api";
+import {
+  oneDayInMs,
+  oneHourInMs,
+  oneMinuteInMs,
+  oneSecondInMs,
+  TELEGRAM_BOT_TOKEN,
+} from "../config/config";
 
-const token = TELEGRAM_BOT_TOKEN
+const token = TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-export const saveChatHistory = async (telegram_id: number, message_id: number, text: string, date: Date, from_bot: boolean) => {
+export const saveChatHistory = async (
+  telegram_id: number,
+  message_id: number,
+  text: string,
+  date: Date,
+  from_bot: boolean
+) => {
   try {
     // Check if the message already exists
     const existingChat = await Chat.findOne({ telegram_id, message_id });
@@ -58,12 +70,21 @@ export const getChatHistory = async (req: Request, res: Response) => {
   }
 };
 
-export const sendTelegramMessage = async (telegram_id: number, message: string) => {
+export const sendTelegramMessage = async (
+  telegram_id: number,
+  message: string
+) => {
   try {
     const response = await bot.sendMessage(telegram_id, message);
 
     // Save the sent message to chat history
-    await saveChatHistory(telegram_id, response.message_id, message, new Date(response.date * 1000), true);
+    await saveChatHistory(
+      telegram_id,
+      response.message_id,
+      message,
+      new Date(response.date * 1000),
+      true
+    );
 
     // Return the response data (chat_id, date, etc.)
     return response;
@@ -73,26 +94,31 @@ export const sendTelegramMessage = async (telegram_id: number, message: string) 
   }
 };
 
-const sendTelegramMultiMessages = async (telegram_id: number, messages: string[]) => {
+const sendTelegramMultiMessages = async (
+  telegram_id: number,
+  messages: string[]
+) => {
   try {
     // Sending messages in batches with a delay between each message
     const batchSize = 5; // Adjust the batch size as needed
     for (let i = 0; i < messages.length; i += batchSize) {
       const batch = messages.slice(i, i + batchSize);
-      
+
       // Create a list of promises to send messages
-      const messagePromises = batch.map(message => sendTelegramMessage(telegram_id, message));
-      
+      const messagePromises = batch.map((message) =>
+        sendTelegramMessage(telegram_id, message)
+      );
+
       // Wait for all promises in the batch to complete
       const responses = await Promise.all(messagePromises);
 
       // Process the responses (you can log the response data like date, chat_id, etc.)
-      responses.forEach(response => {
+      responses.forEach((response) => {
         console.log("Message sent successfully:", response);
       });
-      
+
       // Delay for the next batch (e.g., 1 second)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   } catch (error) {
     console.error("Error sending Telegram messages:", error);
@@ -104,49 +130,108 @@ export const checkUserActivityAndSendMessages = async () => {
   const now = new Date();
 
   for (const user of users) {
-    const lastActivity = user.task_done.length > 0 ? user.task_done[user.task_done.length - 1].completed_date : user.created_at;
-    const lastCheckIn = user.tickets_getting_history.length > 0 ? user.tickets_getting_history[user.tickets_getting_history.length - 1].date : user.created_at;
-    const lastTapGame = user.tap_game_history_per_day.length > 0 ? user.tap_game_history_per_day[user.tap_game_history_per_day.length - 1].date : user.created_at;
+    if (
+      [6430530130, 403768635, 7095784339, 5988754753].includes(user.telegram_id)
+    ) {
+      const lastActivity =
+        user.task_done.length > 0
+          ? user.task_done[user.task_done.length - 1].completed_date
+          : user.created_at;
+      const lastCheckIn =
+        user.tickets_getting_history.length > 0
+          ? user.tickets_getting_history[
+              user.tickets_getting_history.length - 1
+            ].date
+          : user.created_at;
+      const lastTapGame =
+        user.tap_game_history_per_day.length > 0
+          ? user.tap_game_history_per_day[
+              user.tap_game_history_per_day.length - 1
+            ].date
+          : user.created_at;
 
-    const messages = [] as string[];
+      const messages = [] as string[];
 
-    // 1. Player has opened the bot 24 hours ago but still has less than 100 XP.
-    if (user.xp < 100 && (now.getTime() - user.created_at.getTime()) >= oneDayInMs) {
-      messages.push("You have been using the bot for 24 hours but still have less than 100 XP. Start earning more XP now!");
-    }
+      // 1. Player has opened the bot 24 hours ago but still has less than 100 XP.
+      if (
+        user.xp < 100 &&
+        now.getTime() - user.created_at.getTime() >= oneMinuteInMs
+      ) {
+        //oneDayInMs) {
+        messages.push(
+          "You have been using the bot for 24 hours but still have less than 100 XP. Start earning more XP now!"
+        );
+      }
 
-    // 2. Player has 1000 XP+ XP but hasn't played/earned anything for 7 days.
-    if (user.xp >= 1000 && (now.getTime() - lastActivity.getTime()) >= 7 * oneDayInMs) {
-      messages.push("You have over 1000 XP but haven't played or earned anything for 7 days. Come back and continue your journey!");
-    }
+      // 2. Player has 1000 XP+ XP but hasn't played/earned anything for 7 days.
+      if (
+        user.xp >= 1000 &&
+        now.getTime() - lastActivity.getTime() >= 7 * oneMinuteInMs
+      ) {
+        //oneDayInMs) {
+        messages.push(
+          "You have over 1000 XP but haven't played or earned anything for 7 days. Come back and continue your journey!"
+        );
+      }
 
-    // 3. Player has 10000 XP+ XP but hasn't played/earned anything for 30 days.
-    if (user.xp >= 10000 && (now.getTime() - lastActivity.getTime()) >= 30 * oneDayInMs) {
-      messages.push("You have over 10000 XP but haven't played or earned anything for 30 days. Don't miss out on the fun!");
-    }
+      // 3. Player has 10000 XP+ XP but hasn't played/earned anything for 30 days.
+      if (
+        user.xp >= 10000 &&
+        now.getTime() - lastActivity.getTime() >= 30 * oneMinuteInMs
+      ) {
+        //oneDayInMs) {
+        messages.push(
+          "You have over 10000 XP but haven't played or earned anything for 30 days. Don't miss out on the fun!"
+        );
+      }
 
-    // 4. Player has checked-in 25 hours before and claimed his tickets but hasn't claimed the ones of the current day yet.
-    if ((now.getTime() - lastCheckIn.getTime()) >= 25 * 60 * 60 * 1000 && !user.tickets_getting_history.some(entry => entry.date.toDateString() === now.toDateString())) {
-      messages.push("You haven't claimed your tickets for today yet. Claim them now!");
-    }
+      // 4. Player has checked-in 25 hours before and claimed his tickets but hasn't claimed the ones of the current day yet.
+      // if ((now.getTime() - lastCheckIn.getTime()) >= (oneDayInMs + oneHourInMs) && !user.tickets_getting_history.some(entry => entry.date.toDateString() === now.toDateString())) {
+      if (
+        now.getTime() - lastCheckIn.getTime() >=
+          oneMinuteInMs + oneSecondInMs &&
+        !user.tickets_getting_history.some(
+          (entry) => entry.date.toDateString() === now.toDateString()
+        )
+      ) {
+        messages.push(
+          "You haven't claimed your tickets for today yet. Claim them now!"
+        );
+      }
 
-    // 5. Player has 5000 XP+, has played the tap game before, and now hasn't played the tap game for 72 hours.
-    if (user.xp >= 5000 && user.tap_game_history_per_day.length > 0 && (now.getTime() - lastTapGame.getTime()) >= 72 * 60 * 60 * 1000) {
-      messages.push("You have over 5000 XP but haven't played the tap game for 72 hours. Play now and earn more rewards!");
-    }
+      // 5. Player has 5000 XP+, has played the tap game before, and now hasn't played the tap game for 72 hours.
+      // if (
+      //   user.xp >= 5000 &&
+      //   user.tap_game_history_per_day.length > 0 &&
+      //   now.getTime() - lastTapGame.getTime() >= oneDayInMs * 3
+      // ) {
+        if (
+          user.xp >= 5000 &&
+          user.tap_game_history_per_day.length > 0 &&
+          now.getTime() - lastTapGame.getTime() >= oneMinuteInMs * 3
+        ) {
+        messages.push(
+          "You have over 5000 XP but haven't played the tap game for 72 hours. Play now and earn more rewards!"
+        );
+      }
 
-    // 6. Player has reached 5 valid referrals.
-    if (user.valid_referrals.length === 5) {
-      messages.push("Congratulations! You have reached 5 valid referrals. Keep inviting more friends!");
-    }
+      // 6. Player has reached 5 valid referrals.
+      if (user.valid_referrals.length === 5) {
+        messages.push(
+          "Congratulations! You have reached 5 valid referrals. Keep inviting more friends!"
+        );
+      }
 
-    // 7. Player has reached 20 valid referrals.
-    if (user.valid_referrals.length === 20) {
-      messages.push("Amazing! You have reached 20 valid referrals. You're a true champion!");
-    }
+      // 7. Player has reached 20 valid referrals.
+      if (user.valid_referrals.length === 20) {
+        messages.push(
+          "Amazing! You have reached 20 valid referrals. You're a true champion!"
+        );
+      }
 
-    if (messages.length > 0) {
-      await sendTelegramMultiMessages(user.telegram_id, messages);
+      if (messages.length > 0) {
+        await sendTelegramMultiMessages(user.telegram_id, messages);
+      }
     }
   }
 };
@@ -154,7 +239,7 @@ export const checkUserActivityAndSendMessages = async () => {
 export const sendMassMessage = async (req: Request, res: Response) => {
   const { batch, batch_size } = req.body;
   const range = parseInt(batch) * batch_size;
-  const USER_INFO_API = 'https://bot-api.catacomb.fyi/api/user/basic-info';
+  const USER_INFO_API = "https://bot-api.catacomb.fyi/api/user/basic-info";
   try {
     const userInfo = await axios.get(USER_INFO_API);
     const users = userInfo.data;
@@ -181,7 +266,3 @@ Sample Message
     res.status(500).send("Error sending mass message");
   }
 };
-
-
-
-

@@ -36,8 +36,11 @@ export const CLOUDFLARE_R2_REGION = "WNAM";
 export const CLOUDFLARE_R2_ENDPOINT = "https://fbd6e210caf3d534d6ed48a4bb97cf70.r2.cloudflarestorage.com";
 export const CLOUDFLARE_R2_PUBLIC_ENDPOINT = "https://pub-eb157c13cf5f4c28845c2a603ed21192.r2.dev"
 
-export const oneDayInMs = 24 * 60 * 60 * 1000;
-export const twoDaysInMs = 48 * 60 * 60 * 1000;
+export const oneSecondInMs = 1000;
+export const oneMinuteInMs = 60 * oneSecondInMs;
+export const oneHourInMs = 60 * oneMinuteInMs;
+export const oneDayInMs = 24 * oneHourInMs;
+export const twoDaysInMs = oneDayInMs * 2;
 
 export const SEASONS = [
   {
