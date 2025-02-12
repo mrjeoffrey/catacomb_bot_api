@@ -390,14 +390,12 @@ export const getUserById = async (req: Request, res: Response) => {
       seconds_for_next_chest_opening
     );
 
-    // Fetch the first 5 valid referrals with additional user info
     const validReferrals = user.valid_referrals
       .filter((referral) => referral.id)
       .sort(
         (a, b) =>
           new Date(b.time_added).getTime() - new Date(a.time_added).getTime()
       )
-      .slice(0, 5)
       .map((referral) => {
         if (referral.id) {
           const referralData = referral.id as any;
@@ -409,6 +407,7 @@ export const getUserById = async (req: Request, res: Response) => {
           };
         }
       });
+    const all_referrals = getUsersReferredByUser(user.id)
     // Aggregate rankings for active users
     const { rankings, currentUserRank } = await getRankings(user);
 
@@ -426,6 +425,7 @@ export const getUserById = async (req: Request, res: Response) => {
       rankings: rankings,
       rank: currentUserRank,
       valid_referrals: validReferrals,
+      all_referrals
     };
 
     res.json(userInfo);
@@ -633,6 +633,26 @@ export const handleReferralRewards = async (
       }
       await referrer.save();
     }
+  }
+};
+
+// Function to get all users referred by a specific user
+export const getUsersReferredByUser = async (userId: string): Promise<IUser[]> => {
+  try {
+    const users = await User.find({ referred_by: userId })
+      .populate({
+        path: "referred_by",
+        select: "username _id telegram_id",
+      })
+      .populate({
+        path: "task_done.task_id",
+        select: "name link avatar_url gold_reward xp_reward",
+      });
+
+    return users;
+  } catch (error) {
+    console.error("Error fetching users referred by user:", error);
+    throw new Error("Server error");
   }
 };
 
