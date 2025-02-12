@@ -38,7 +38,7 @@ export const saveChatMessage = async (telegram_id: number, message: string) => {
   try {
     const newChat = new Chat({
       telegram_id,
-      message_id: Date.now(), // Use current timestamp as a unique message ID
+      message_id: Date.now(),
       text: message,
       date: new Date(),
       from_bot: false,
@@ -139,7 +139,7 @@ export const checkUserActivityAndSendMessages = async () => {
 
       if (
         user.xp < 100 &&
-        now.getTime() - user.created_at.getTime() >= oneMinuteInMs // oneDayInMs
+        now.getTime() - user.created_at.getTime() >= oneDayInMs
       ) {
         messages.push({
           message:
@@ -150,7 +150,7 @@ export const checkUserActivityAndSendMessages = async () => {
 
       if (
         user.xp >= 1000 &&
-        now.getTime() - lastActivity.getTime() >= 7 * oneMinuteInMs // oneDayInMs
+        now.getTime() - lastActivity.getTime() >= 7 * oneDayInMs
       ) {
         messages.push({
           message:
@@ -161,7 +161,7 @@ export const checkUserActivityAndSendMessages = async () => {
 
       if (
         user.xp >= 10000 &&
-        now.getTime() - lastActivity.getTime() >= 30 * oneMinuteInMs // oneDayInMs
+        now.getTime() - lastActivity.getTime() >= 30 * oneDayInMs
       ) {
         messages.push({
           message:
@@ -172,7 +172,7 @@ export const checkUserActivityAndSendMessages = async () => {
 
       if (
         now.getTime() - lastCheckIn.getTime() >=
-          oneMinuteInMs + oneSecondInMs && // oneDayInMs + oneHourInMs &&
+         oneDayInMs + oneHourInMs &&
         !user.tickets_getting_history.some(
           (entry) => entry.date.toDateString() === now.toDateString()
         )
@@ -187,7 +187,7 @@ export const checkUserActivityAndSendMessages = async () => {
       if (
         user.xp >= 5000 &&
         user.tap_game_history_per_day.length > 0 &&
-        now.getTime() - (lastTapGame?lastTapGame.getTime():0) >= 3 * oneMinuteInMs // oneDayInMs
+        now.getTime() - (lastTapGame?lastTapGame.getTime():0) >= 3 * oneDayInMs
       ) {
         messages.push({
           message:

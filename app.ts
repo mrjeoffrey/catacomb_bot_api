@@ -201,12 +201,7 @@ loadLevelsInMemory();
 // recalcAllUserInfo();
 
 // Schedule the checkUserActivityAndSendMessages function to run every hour
-// cron.schedule("0 * * * *", async () => {
-//   await checkUserActivityAndSendMessages();
-// });
-
-// Schedule the checkUserActivityAndSendMessages function to run every minute
-cron.schedule("* * * * *", async () => {
+cron.schedule("0 * * * *", async () => {
   await checkUserActivityAndSendMessages();
 });
 
