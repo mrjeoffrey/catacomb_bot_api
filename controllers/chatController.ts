@@ -84,6 +84,21 @@ export const sendPrivateMessage = async (req: Request, res: Response) => {
   }
 };
 
+const sendMessagesInBatches = async (messages: any[], batchSize: number, delay: number) => {
+  for (let i = 0; i < messages.length; i += batchSize) {
+    const batch = messages.slice(i, i + batchSize);
+    try {
+      await axios.post(`${BOT_API_URL}/send-messages`, batch);
+      for (const { telegram_id, message, reason } of batch) {
+        await saveChatHistory(telegram_id, Date.now(), message, new Date(), true, reason);
+      }
+    } catch (error) {
+      console.error("Error sending batch messages:", error);
+    }
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+};
+
 export const checkUserActivityAndSendMessages = async () => {
   const users = await User.find();
   const now = new Date();
@@ -215,10 +230,7 @@ export const checkUserActivityAndSendMessages = async () => {
   }
 
   try {
-    await axios.post(`${BOT_API_URL}/send-messages`, messagesToSend);
-    for (const { telegram_id, message, reason } of messagesToSend) {
-      await saveChatHistory(telegram_id, Date.now(), message, new Date(), true, reason);
-    }
+    await sendMessagesInBatches(messagesToSend, 10, 1000);
   } catch (error) {
     console.error("Error sending messages:", error);
   }
@@ -234,11 +246,7 @@ export const sendMassMessage = async (req: Request, res: Response) => {
       reason: "Mass message",
     }));
     
-    await axios.post(`${BOT_API_URL}/send-messages`, message);
-    console.log(message, "------------Sent Mass message------------")
-    for (const { telegram_id, message, reason } of messagesToSend) {
-      await saveChatHistory(telegram_id, Date.now(), message, new Date(), true, reason);
-    }
+    await sendMessagesInBatches(messagesToSend, 10, 1000);
 
     res.status(200).send("Success");
   } catch (err) {
