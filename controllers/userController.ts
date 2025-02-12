@@ -85,7 +85,6 @@ export const recalcAllUserInfo = async () => {
 
       user.current_season_xp = seasonXP;
       user.current_season_gold = seasonGold;
-      console.log(user.username, user.current_season_xp);
       await user.save();
     }))
   return usersWithDetails;
@@ -408,6 +407,7 @@ export const getUserById = async (req: Request, res: Response) => {
         }
       });
     const all_referrals = getUsersReferredByUser(user._id)
+    console.log(all_referrals,"_+_+_+_+_+_+_+")
     // Aggregate rankings for active users
     const { rankings, currentUserRank } = await getRankings(user);
 
@@ -648,7 +648,7 @@ export const getUsersReferredByUser = async (userId: Types.ObjectId): Promise<IU
         path: "task_done.task_id",
         select: "name link avatar_url gold_reward xp_reward",
       });
-    console.log(users, "_________________________")
+
     return users;
   } catch (error) {
     console.error("Error fetching users referred by user:", error);
