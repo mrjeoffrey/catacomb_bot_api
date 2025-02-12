@@ -6,6 +6,7 @@ export interface IChat extends Document {
   text: string;
   date: Date;
   from_bot: boolean;
+  reason: string;
 }
 
 const chatSchema: Schema = new Schema({
@@ -14,6 +15,7 @@ const chatSchema: Schema = new Schema({
   text: { type: String, required: true },
   date: { type: Date, required: true },
   from_bot: { type: Boolean, required: true },
+  reason: { type: String, required: true },
 });
 
 export default mongoose.model<IChat>("Chat", chatSchema);

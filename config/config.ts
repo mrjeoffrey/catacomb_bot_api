@@ -8,6 +8,7 @@ export const MONGO_URI =
 export const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 export const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "7860048588:AAF9R8OzlL1qmHSWDx4LBUlRzTo6Tu9rHi4";
 
+export const BOT_API_URL = "https://api.catacomb.fyi"
 export const STAKING_APP_URL = "t.me/CataStakingBot/catacomb";
 export const WEBSITE_URL = "https://t.me/catacombseasonone_bot/CATACOMB";
 export const TG_URL = "https://t.me/catacombTON";
