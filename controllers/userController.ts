@@ -407,7 +407,6 @@ export const getUserById = async (req: Request, res: Response) => {
         }
       });
     const all_referrals = await getUsersReferredByUser(user._id)
-    console.log(all_referrals,"_+_+_+_+_+_+_+")
     // Aggregate rankings for active users
     const { rankings, currentUserRank } = await getRankings(user);
 
