@@ -26,18 +26,18 @@ export interface IUser extends Document {
   current_season_xp: number;
   current_season_gold: number;
   limited_time: Date;
-
-  tap_game_history_per_day: {date: Date; xp: number; gold: number}[];
+  tap_game_history_per_day: { date: Date; xp: number; gold: number }[];
+  construction_days_xp_claiming_history: { date: Date; xp: number }[];
   tickets_remaining: number;
-  tickets_getting_history: {date: Date; number_of_tickets: number; due_to: "daily" | "ad" | null; resetted: boolean}[];
+  tickets_getting_history: { date: Date; number_of_tickets: number; due_to: "daily" | "ad" | null; resetted: boolean; construction_days: number | null; }[];
   current_available_taps: number;
 }
 
 const userSchema: Schema = new Schema({
   telegram_id: { type: Number, required: true, unique: true },
   username: { type: String, required: true },
-  first_name: { type: String},
-  last_name: { type: String},
+  first_name: { type: String },
+  last_name: { type: String },
   gold: { type: Number, default: 0 },
   xp: { type: Number, default: 0 },
   wallet_address: { type: String },
@@ -73,10 +73,9 @@ const userSchema: Schema = new Schema({
   ],
   blocked: { type: Boolean, default: false },
   created_at: { type: Date, default: Date.now },
-  current_season_xp: { type: Number, default: 0},
+  current_season_xp: { type: Number, default: 0 },
   current_season_gold: { type: Number, default: 0 },
-  limited_time: {type: Date, default:null},
-  
+  limited_time: { type: Date, default: null },
   tap_game_history_per_day: [
     {
       date: { type: Date, required: true, default: Date.now },
@@ -90,8 +89,15 @@ const userSchema: Schema = new Schema({
       date: { type: Date, required: true, default: Date.now },
       number_of_tickets: { type: Number, required: true },
       due_to: { type: String, enum: ["daily", null, "ad"], default: null },
-      resetted: { type: Boolean, default: false}
+      resetted: { type: Boolean, default: false },
+      construction_days: { type: Number, default: 1 }
     },
+  ],
+  construction_days_xp_claiming_history: [
+    {
+      date: { type: Date, default: Date.now },
+      xp: { type: Number, required: true },
+    }
   ],
   current_available_taps: { type: Number, default: 0 },
 });

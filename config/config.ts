@@ -42,6 +42,7 @@ export const oneMinuteInMs = 60 * oneSecondInMs;
 export const oneHourInMs = 60 * oneMinuteInMs;
 export const oneDayInMs = 24 * oneHourInMs;
 export const twoDaysInMs = oneDayInMs * 2;
+export const CONSTRUCTION_DAYS_XP_CLAIM_WORTH = 500;
 
 export const SEASONS = [
   {

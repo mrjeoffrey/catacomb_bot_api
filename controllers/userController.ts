@@ -262,8 +262,18 @@ export const getSpecificSeasonXPAndGoldByUser = async (user: IUser, seasonStart:
     0
   );
 
-  // Combine XP and gold from chests, tasks, and tap game history
-  const seasonXP = chestSeasonXP + taskSeasonXP + tapGameSeasonXP;
+  // Get XP history from Construction days claiming within the season
+  const constructionDaysClaiming = user.construction_days_xp_claiming_history.filter(
+    (entry) => entry.date >= seasonStart && entry.date <= seasonEnd
+  );
+
+  const constructionDaysClaimingSeasonXP = constructionDaysClaiming.reduce(
+    (sum, entry) => sum + entry.xp,
+    0
+  );
+
+  // Combine XP and gold from chests, tasks, and tap game history and Construction days claiming
+  const seasonXP = chestSeasonXP + taskSeasonXP + tapGameSeasonXP + constructionDaysClaimingSeasonXP;
   const seasonGold = chestSeasonGold + taskSeasonGold + tapGameSeasonGold;
 
   // Calculate valid referrals this month
@@ -336,9 +346,15 @@ export const getTotalXpAndGoldByUser = async (user: IUser) => {
     0
   );
 
+  // Calculate XP from Construction days claiming from 2024/12/24 to today
+  const constructionDaysClaimingXP = user.construction_days_xp_claiming_history.reduce(
+    (sum, entry) => sum + entry.xp,
+    0
+  );
+
   // Combine all sources of XP and gold
   const totalXP =
-    totalChestXP + totalTaskXP + totalTapGameXP;
+    totalChestXP + totalTaskXP + totalTapGameXP + constructionDaysClaimingXP;
   const totalGold =
     totalChestGold + totalTaskGold + totalTapGameGold;
 
