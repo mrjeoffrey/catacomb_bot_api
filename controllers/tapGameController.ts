@@ -220,14 +220,14 @@ const getClaimableTickets = (
     return {
       claimable: Math.min(lastClaimTickets / 5 + 1, 4),
       resetted: false,
-      construction_days: lastConstructionDays ? lastConstructionDays + 1 : lastClaimTickets / 5 + 1,
+      construction_days: Number(lastConstructionDays) > 4 ? Number(lastConstructionDays) + 1 : lastClaimTickets / 5 + 1,
     }; // Add 1 ticket up to a maximum of 4
   }
 
   return {
     claimable: 0,
     resetted: false,
-    construction_days: lastConstructionDays ? lastConstructionDays + 1 : lastClaimTickets / 5 + 1,
+    construction_days: Number(lastConstructionDays) > 4 ? Number(lastConstructionDays) + 1 : lastClaimTickets / 5 + 1,
   }; // Less than 24 hours, no tickets to claim
 };
 
