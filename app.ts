@@ -200,8 +200,8 @@ loadLevelsInMemory();
 // removeUnnecessaryChestListInSpecificPeriod(2)
 // recalcAllUserInfo();
 
-// Schedule the checkUserActivityAndSendMessages function to run every hour
-cron.schedule("0 * * * *", async () => {
+// Schedule the checkUserActivityAndSendMessages function to run every day at midnight
+cron.schedule("0 0 * * *", async () => {
   await checkUserActivityAndSendMessages();
 });
 

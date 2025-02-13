@@ -296,7 +296,9 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
           return res.status(400).json({ message: "Invalid image format" });
         }
       }
-
+      if (imageUrl === "" || imageUrl === undefined || imageUrl === null) {
+        return res.status(400).json({ message: "Please add a screenshot" });
+      }
       if (existingTask) {
         if (existingTask?.validation_status === "validated") {
           return res.json({
@@ -310,9 +312,7 @@ export const taskProofingOrder = async (req: Request, res: Response) => {
           existingTask.validation_status = "unchecked";
         }
       } else {
-        if (imageUrl === "" || imageUrl === undefined || imageUrl === null) {
-          return res.status(400).json({ message: "Please add a screenshot" });
-        }
+        
         // Add new task if it doesn't exist
         user.task_done.push({
           task_id,
