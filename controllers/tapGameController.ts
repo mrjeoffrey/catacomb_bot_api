@@ -264,11 +264,14 @@ export const claimDailyTicket = async (req: Request, res: Response) => {
   user.tickets_remaining += claimableTickets.claimable * 5;
 
   //Adding XPs if construction days overed 5 days when claim tickets
-  if (claimableTickets.construction_days > 4)
+  if (claimableTickets.construction_days > 4) {
     user.construction_days_xp_claiming_history.push({
       date: currentDate,
       xp: CONSTRUCTION_DAYS_XP_CLAIM_WORTH
     })
+    console.log("Added XP for construction days", telegram_id, CONSTRUCTION_DAYS_XP_CLAIM_WORTH)
+  }
+   
 
   await user.save();
 
