@@ -417,13 +417,41 @@ export const getUsersWithMoreThan10ReferralsSameIP = async (req: Request, res: R
         }
       },
       {
+        $project: {
+          telegram_id: 1,
+          username: 1,
+          IP_address: 1,
+          referrals: {
+            $filter: {
+              input: "$referrals",
+              as: "referral",
+              cond: {
+                $not: {
+                  $in: ["$$referral._id", "$valid_referrals.id"]
+                }
+              }
+            }
+          }
+        }
+      },
+      {
         $group: {
           _id: "$IP_address",
           users: {
             $push: {
               telegram_id: "$telegram_id",
               username: "$username",
-              referral_count: { $size: "$referrals" }
+              referral_count: { $size: "$referrals" },
+              referrals: {
+                $map: {
+                  input: "$referrals",
+                  as: "referral",
+                  in: {
+                    telegram_id: "$$referral.telegram_id",
+                    username: "$$referral.username"
+                  }
+                }
+              }
             }
           },
           count: { $sum: 1 }
