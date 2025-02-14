@@ -206,7 +206,7 @@ cron.schedule("0 0 * * *", async () => {
 });
 
 // Schedule the getUsersWithMoreThan10ReferralsSameIP function to run every hour
-cron.schedule("0 * * * *", async () => {
+cron.schedule("0 0 0 * *", async () => {
   await getUsersWithMoreThan10ReferralsSameIP();
 });
 
