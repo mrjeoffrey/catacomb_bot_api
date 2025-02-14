@@ -481,7 +481,7 @@ export const downloadUsersWithMoreThan10ReferralsSameIP = (req: Request, res: Re
   res.download(filePath, "users_with_more_than_10_referrals_same_ip.txt", (err) => {
     if (err) {
       console.error("Error sending file:", err);
-      res.status(500).json({ message: "Server error" });
+      res.status(500).json({ message: err });
     }
   });
 };
