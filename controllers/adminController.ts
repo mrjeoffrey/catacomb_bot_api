@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import Admin from "../models/adminModel";
-import User from "../models/userModel";
+import User, { IUser } from "../models/userModel";
 import Task from "../models/taskModel";
 import Settings from "../models/settingsModel";
 import Level from "../models/levelModel";
@@ -404,12 +404,12 @@ export const removeChestOpenedHistory = async (req: Request, res: Response) => {
 
 export const getUsersWithMoreThan10ReferralsSameIP = async () => {
   try {
-    const users = await User.find();
-    const userMap = new Map();
+    const users: IUser[] = await User.find();
+    const userMap = new Map<string, any[]>();
 
     for (const user of users) {
-      const referrals = await User.find({ referred_by: user._id });
-      const validReferrals = referrals.filter(referral => 
+      const referrals: IUser[] = await User.find({ referred_by: user._id });
+      const validReferrals = referrals.filter((referral: IUser) => 
         !user.valid_referrals.some(validReferral => validReferral.id.equals(referral._id))
       );
 
@@ -417,11 +417,11 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
         if (!userMap.has(user.IP_address)) {
           userMap.set(user.IP_address, []);
         }
-        userMap.get(user.IP_address).push({
+        userMap.get(user.IP_address)!.push({
           telegram_id: user.telegram_id,
           username: user.username,
           referral_count: validReferrals.length,
-          referrals: validReferrals.map(referral => ({
+          referrals: validReferrals.map((referral: IUser) => ({
             telegram_id: referral.telegram_id,
             username: referral.username,
             IP_address: referral.IP_address
@@ -457,8 +457,8 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
                 <div class="referrals">
                   <h4>Referrals:</h4>
                   <ul>
-                    ${user.referrals.map(referral => `
-                      <li>${referral.username} (Telegram ID: ${referral.telegram_id}, IP Address: ${referral.IP_address})</li>
+                    ${user.referrals.map((referral: any) => `
+                      <li>${referral?.username} (Telegram ID: ${referral?.telegram_id}, IP Address: ${referral?.IP_address})</li>
                     `).join('')}
                   </ul>
                 </div>
