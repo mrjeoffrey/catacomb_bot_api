@@ -211,7 +211,7 @@ const getClaimableTickets = (
   }
 
   // If between 24 and 48 hours, calculate based on the number of tickets claimed last time
-  if (timeDifference >= oneDayInMs || telegram_id === 6430530130) {
+  if (timeDifference >= oneDayInMs) {
     if (lastResetStatus) return {
       claimable: 1,
       resetted: false,

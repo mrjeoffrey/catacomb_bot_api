@@ -13,6 +13,7 @@ import {
   removeAdmin,
   getRankingsInSpecificPeriod,
   getSeasonsList,
+  getUsersWithMoreThan10ReferralsSameIP,
 } from "../controllers/adminController";
 import { authenticateTokenForAdmin } from "../middlewares/authMiddleware";
 
@@ -30,5 +31,6 @@ router.post("/remove-user", authenticateTokenForAdmin, removeUser);
 router.put("/edit-task", authenticateTokenForAdmin, editTask);
 router.post("/insert-level", authenticateTokenForAdmin, insertLevel);
 router.put("/update-level", authenticateTokenForAdmin, updateLevel);
+router.get("/users-with-more-than-10-referrals-same-ip", authenticateTokenForAdmin, getUsersWithMoreThan10ReferralsSameIP);
 
 export default router;

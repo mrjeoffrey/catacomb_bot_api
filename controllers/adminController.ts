@@ -400,3 +400,46 @@ export const removeChestOpenedHistory = async (req: Request, res: Response) => {
   }
 };
 
+export const getUsersWithMoreThan10ReferralsSameIP = async (req: Request, res: Response) => {
+  try {
+    const users = await User.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "referred_by",
+          as: "referrals"
+        }
+      },
+      {
+        $match: {
+          "referrals.10": { $exists: true }
+        }
+      },
+      {
+        $group: {
+          _id: "$IP_address",
+          users: {
+            $push: {
+              telegram_id: "$telegram_id",
+              username: "$username",
+              referral_count: { $size: "$referrals" }
+            }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $match: {
+          count: { $gt: 1 }
+        }
+      }
+    ]);
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users with more than 10 referrals and same IP:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+

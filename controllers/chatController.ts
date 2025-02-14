@@ -54,7 +54,6 @@ export const sendTelegramMessage = async (
     const response = await axios.post(`${BOT_API_URL}/send-messages`, [
       { telegram_id, message },
     ]);
-    console.log({ telegram_id, message }, "------------Sent Private message------------")
     // Save the sent message to chat history
     await saveChatHistory(
       telegram_id,
@@ -89,7 +88,6 @@ const sendMessagesInBatches = async (messages: any[], batchSize: number, delay: 
     const batch = messages.slice(i, i + batchSize);
     try {
       await axios.post(`${BOT_API_URL}/send-messages`, batch);
-      console.log(batch, "___________Sent_Messages_________________")
       for (const { telegram_id, message, reason } of batch) {
         await saveChatHistory(telegram_id, Date.now(), message, new Date(), true, reason);
       }
@@ -143,35 +141,35 @@ export const checkUserActivityAndSendMessages = async () => {
       ) {
         messages.push({
           message:
-            "You have been using the bot for 24 hours but still have less than 100 XP. Start earning more XP now!",
+            `Oh no! 😱 You’ve been using Catacomb for 24 hours but still have less than 100 XP. Start earning more XP now! 🎮 Press /start to play, work your way up the leaderboards, and claim your slice of our massive $USDT prize pool. 💎✨`,
           reason: "Less than 100 XP in 24 hours",
         });
       }
 
       if (
         user.xp >= 1000 &&
-        now.getTime() - lastActivity.getTime() >= 7 * oneDayInMs
+        now.getTime() - lastActivity.getTime() >= ( 7 * oneDayInMs )
       ) {
         messages.push({
           message:
-            "You have over 1000 XP but haven't played or earned anything for 7 days. Come back and continue your journey!",
-          reason: "1000+ XP but inactive for 7 days",
+            `Where are you? 😯 You have over 1000 XP but haven’t played or earned anything in 7 days. Come back and continue your journey! 🎮 Press /start to play.`,
+          reason: `1000+ XP but inactive for 7 days`,
         });
       }
 
       if (
         user.xp >= 10000 &&
-        now.getTime() - lastActivity.getTime() >= 30 * oneDayInMs
+        now.getTime() - lastActivity.getTime() >= ( 30 * oneDayInMs )
       ) {
         messages.push({
           message:
-            "You have over 10000 XP but haven't played or earned anything for 30 days. Don't miss out on the fun!",
-          reason: "10000+ XP but inactive for 30 days",
+            `You have over 10,000 XP but haven’t played or earned anything in 30 days. Don’t miss out on the fun! 🎮 Press /start to play, climb the leaderboards, and claim your slice of our massive $USDT prize pool. 💎✨`,
+          reason: `10000+ XP but inactive for 30 days`,
         });
       }
 
       if (
-        now.getTime() - lastCheckIn.getTime() >=
+        now.getTime() - lastCheckIn.getTime() >= 
         (oneDayInMs + oneHourInMs) &&
         !user.tickets_getting_history.some(
           (entry) => entry.date.toDateString() === now.toDateString()
@@ -179,8 +177,8 @@ export const checkUserActivityAndSendMessages = async () => {
       ) {
         messages.push({
           message:
-            "You haven't claimed your tickets for today yet. Claim them now!",
-          reason: "Unclaimed tickets for today",
+            `Hey 👋 Are you around? You haven’t claimed your tickets for today yet! 🎟 Press /start and claim them now!`,
+          reason: `Unclaimed tickets for today`,
         });
       }
 
@@ -191,8 +189,8 @@ export const checkUserActivityAndSendMessages = async () => {
       ) {
         messages.push({
           message:
-            "You have over 5000 XP but haven't played the tap game for 72 hours. Play now and earn more rewards!",
-          reason: "5000+ XP but inactive in tap game for 72 hours",
+            `Where have you been? 🧐 You’ve got over 5,000 XP but haven’t played the tap game in 72 hours! 🎮 Don’t fall behind—press /start now, climb the leaderboards, and grab your share of our massive $USDT prize pool! 💎✨`,
+          reason: `5000+ XP but inactive in tap game for 72 hours`,
         });
       }
 
@@ -201,26 +199,26 @@ export const checkUserActivityAndSendMessages = async () => {
       if (
         user.valid_referrals.length >= 5 &&
         !chatHistory.some(
-          (chat) => chat.reason === "Reached 5 valid referrals"
+          (chat) => chat.reason === `Reached 5 valid referrals`
         )
       ) {
         messages.push({
           message:
-            "Congratulations! You have reached 5 valid referrals. Keep inviting more friends!",
-          reason: "Reached 5 valid referrals",
+            `Congratulations! 🥳 You’ve reached 5 valid referrals 🏆 Why stop now? Keep inviting friends and family, rack up XP, and earn 10% of their gold—for life! 🤑🤑 Press /start to play.`,
+          reason: `Reached 5 valid referrals`,
         });
       }
 
       if (
         user.valid_referrals.length >= 20 &&
         !chatHistory.some(
-          (chat) => chat.reason === "Reached 20 valid referrals"
+          (chat) => chat.reason === `Reached 20 valid referrals`
         )
       ) {
         messages.push({
           message:
-            "Amazing! You have reached 20 valid referrals. You're a true champion!",
-          reason: "Reached 20 valid referrals",
+            `Boom! 👊💥 You’ve smashed 20 valid referrals! But why stop now? Keep bringing in friends, rack up insane XP, and pocket 10% of their gold—for life! 🤑🤑 Press /start and keep the streak going!`,
+          reason: `Reached 20 valid referrals`,
         });
       }
 
