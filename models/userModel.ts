@@ -31,6 +31,7 @@ export interface IUser extends Document {
   tickets_remaining: number;
   tickets_getting_history: { date: Date; number_of_tickets: number; due_to: "daily" | "ad" | null; resetted: boolean; construction_days: number | null; }[];
   current_available_taps: number;
+  ad_shown: number;
 }
 
 const userSchema: Schema = new Schema({
@@ -100,6 +101,7 @@ const userSchema: Schema = new Schema({
     }
   ],
   current_available_taps: { type: Number, default: 0 },
+  ad_shown: { type: Number, default: () => Math.floor(Math.random() * 3) + 10 },
 });
 
 export default mongoose.model<IUser>("User", userSchema);

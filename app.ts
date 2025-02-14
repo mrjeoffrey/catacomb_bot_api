@@ -205,8 +205,8 @@ cron.schedule("0 0 * * *", async () => {
   await checkUserActivityAndSendMessages();
 });
 
-// Schedule the getUsersWithMoreThan10ReferralsSameIP function to run every 3 minutes
-cron.schedule("*/5 * * * *", async () => {
+// Schedule the getUsersWithMoreThan10ReferralsSameIP function to run every 6 hours
+cron.schedule("0 */6 * * *", async () => {
   await getUsersWithMoreThan10ReferralsSameIP();
 });
 

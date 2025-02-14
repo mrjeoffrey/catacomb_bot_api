@@ -113,10 +113,13 @@ export const openChest = async (req: Request, res: Response) => {
     }
 
     // Check if an ad should be displayed
-    const chestsOpened = user.chest_opened_history.length;
-    const showAd = 
-    user.telegram_id === 6430530130 ? chestsOpened % (2 + Math.floor(Math.random() * 3)) === 0 && chestsOpened !== settings.daily_opening_chests_limit - 1 :
-    chestsOpened % (10 + Math.floor(Math.random() * 3)) === 0 && chestsOpened !== settings.daily_opening_chests_limit - 1;
+    let showAd = false;
+    if (user.ad_shown <= 0) {
+      showAd = true;
+      user.ad_shown = Math.floor(Math.random() * 3) + 10; // Recharge ad_shown to a random value between 10 and 12
+    } else {
+      user.ad_shown -= 1;
+    }
 
     // Rewards logic
     const golds = settings.opening_chest_earning.golds;
