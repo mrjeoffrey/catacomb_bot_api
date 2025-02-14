@@ -401,6 +401,9 @@ export const removeChestOpenedHistory = async (req: Request, res: Response) => {
 };
 
 export const getUsersWithMoreThan10ReferralsSameIP = async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string, 10) || 1;
+  const limit = parseInt(req.query.limit as string, 10) || 10;
+
   try {
     const users = await User.aggregate([
       {
@@ -461,10 +464,48 @@ export const getUsersWithMoreThan10ReferralsSameIP = async (req: Request, res: R
         $match: {
           count: { $gt: 1 }
         }
+      },
+      {
+        $skip: (page - 1) * limit
+      },
+      {
+        $limit: limit
       }
     ]);
 
-    res.status(200).json(users);
+    const total = await User.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "referred_by",
+          as: "referrals"
+        }
+      },
+      {
+        $match: {
+          "referrals.10": { $exists: true }
+        }
+      },
+      {
+        $group: {
+          _id: "$IP_address",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $match: {
+          count: { $gt: 1 }
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      users,
+      total: total.length,
+      page,
+      limit
+    });
   } catch (error) {
     console.error("Error fetching users with more than 10 referrals and same IP:", error);
     res.status(500).json({ message: "Server error" });
