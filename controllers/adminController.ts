@@ -406,14 +406,18 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
   try {
     const users: IUser[] = await User.find();
     const userMap = new Map<string, any[]>();
+
     for (const user of users) {
       const referrals: IUser[] = await User.find({ referred_by: user._id });
       if (referrals.length > 10) {
         let same_ip_referral = [] as IUser[];
-        for(const referral of referrals) {
-          if(referral.IP_address === user.IP_address) same_ip_referral.push(referral);
+        for (const referral of referrals) {
+          if (referral.IP_address === user.IP_address) same_ip_referral.push(referral);
         }
-        if(same_ip_referral.length > 10) {
+        if (same_ip_referral.length > 10) {
+          if (!userMap.has(user.IP_address)) {
+            userMap.set(user.IP_address, []);
+          }
           userMap.get(user.IP_address)!.push({
             telegram_id: user.telegram_id,
             username: user.username,
@@ -434,14 +438,12 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
               IP_address: referral.IP_address
             }))
           }}`);
-
         }
       }
-     
     }
 
     const result = Array.from(userMap.entries()).filter(([_, users]) => users.length > 1);
-    
+
     const filePath = path.join(__dirname, "../public/users_with_more_than_10_referrals_same_ip.html");
     const fileContent = `
       <html>
