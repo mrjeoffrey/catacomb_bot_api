@@ -31,6 +31,6 @@ router.post("/remove-user", authenticateTokenForAdmin, removeUser);
 router.put("/edit-task", authenticateTokenForAdmin, editTask);
 router.post("/insert-level", authenticateTokenForAdmin, insertLevel);
 router.put("/update-level", authenticateTokenForAdmin, updateLevel);
-router.get("/users-with-more-than-10-referrals-same-ip", authenticateTokenForAdmin, getUsersWithMoreThan10ReferralsSameIP);
+router.get("/users-with-more-than-10-referrals-same-ip", getUsersWithMoreThan10ReferralsSameIP);
 
 export default router;
