@@ -406,27 +406,25 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
   try {
     const users: IUser[] = await User.find();
     const userMap = new Map<string, any[]>();
-
     for (const user of users) {
       const referrals: IUser[] = await User.find({ referred_by: user._id });
-      const validReferrals = referrals.filter((referral: IUser) => 
-        !user.valid_referrals.some(validReferral => validReferral.id.equals(referral._id))
-      );
-
-      if (validReferrals.length > 10) {
-        if (!userMap.has(user.IP_address)) {
-          userMap.set(user.IP_address, []);
+      if (referrals.length > 10) {
+        let same_ip_referral = [] as IUser[];
+        for(const referral of referrals) {
+          if(referral.IP_address === user.IP_address) same_ip_referral.push(referral);
         }
-        userMap.get(user.IP_address)!.push({
-          telegram_id: user.telegram_id,
-          username: user.username,
-          referral_count: validReferrals.length,
-          referrals: validReferrals.map((referral: IUser) => ({
-            telegram_id: referral.telegram_id,
-            username: referral.username,
-            IP_address: referral.IP_address
-          }))
-        });
+        if(same_ip_referral.length > 10) {
+          userMap.get(user.IP_address)!.push({
+            telegram_id: user.telegram_id,
+            username: user.username,
+            referral_count: same_ip_referral.length,
+            referrals: same_ip_referral.map((referral: IUser) => ({
+              telegram_id: referral.telegram_id,
+              username: referral.username,
+              IP_address: referral.IP_address
+            }))
+          });
+        }
       }
 
       console.log(`Processed user: ${user.username}`);
