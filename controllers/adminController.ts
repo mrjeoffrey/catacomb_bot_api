@@ -409,30 +409,33 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
 
     for (const user of users) {
       const referrals: IUser[] = await User.find({ referred_by: user._id });
-      if (referrals.length > 10) {
-        // let same_ip_referral = [] as IUser[];
-        // for (const referral of referrals) {
-        //   if (referral.IP_address === user.IP_address) same_ip_referral.push(referral);
-        // }
-        if (referrals.length > 10) {
-          if (!userMap.has(user.IP_address)) {
-            userMap.set(user.IP_address, []);
+      const ipCountMap = new Map<string, IUser[]>();
+
+      for (const referral of referrals) {
+        if (!ipCountMap.has(referral.IP_address)) {
+          ipCountMap.set(referral.IP_address, []);
+        }
+        ipCountMap.get(referral.IP_address)!.push(referral);
+      }
+
+      for (const [ip, sameIpReferrals] of ipCountMap.entries()) {
+        if (sameIpReferrals.length > 10) {
+          if (!userMap.has(ip)) {
+            userMap.set(ip, []);
           }
-          userMap.get(user.IP_address)!.push({
+          userMap.get(ip)!.push({
             telegram_id: user.telegram_id,
             username: user.username,
-            referral_count: referrals.length,
-            
-            referrals: referrals.map((referral: IUser) => ({
+            location: user.location,
+            referral_count: sameIpReferrals.length,
+            referrals: sameIpReferrals.map((referral: IUser) => ({
               telegram_id: referral.telegram_id,
               username: referral.username,
               IP_address: referral.IP_address,
-              xp: referral.xp,
+              location: referral.location
             }))
           });
-          console.log(`Processed users: ${user.telegram_id},
-            ${user.username},
-            ${referrals.length}}`);
+          console.log(`Processed user: ${user.username}, Telegram ID: ${user.telegram_id}, IP Address: ${user.IP_address}, Referrals Processed: ${sameIpReferrals.length}`);
         }
       }
     }
@@ -457,13 +460,13 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
             <h2>IP Address: ${ip}</h2>
             ${users.map(user => `
               <div class="user">
-                <h3>${user.username} (Telegram ID: ${user.telegram_id})</h3>
+                <h3>${user.username} (Telegram ID: ${user.telegram_id}, Location: ${user.location})</h3>
                 <p>Referral Count: ${user.referral_count}</p>
                 <div class="referrals">
                   <h4>Referrals:</h4>
                   <ul>
                     ${user.referrals.map((referral: any) => `
-                      <li>${referral?.username} (Telegram ID: ${referral?.telegram_id}, IP Address: ${referral?.IP_address}, XP: ${referral?.xp})</li>
+                      <li>${referral?.username} (Telegram ID: ${referral?.telegram_id}, IP Address: ${referral?.IP_address}, Location: ${referral?.location})</li>
                     `).join('')}
                   </ul>
                 </div>
