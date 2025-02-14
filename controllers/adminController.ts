@@ -410,27 +410,29 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
     for (const user of users) {
       const referrals: IUser[] = await User.find({ referred_by: user._id });
       if (referrals.length > 10) {
-        let same_ip_referral = [] as IUser[];
-        for (const referral of referrals) {
-          if (referral.IP_address === user.IP_address) same_ip_referral.push(referral);
-        }
-        if (same_ip_referral.length > 10) {
+        // let same_ip_referral = [] as IUser[];
+        // for (const referral of referrals) {
+        //   if (referral.IP_address === user.IP_address) same_ip_referral.push(referral);
+        // }
+        if (referrals.length > 10) {
           if (!userMap.has(user.IP_address)) {
             userMap.set(user.IP_address, []);
           }
           userMap.get(user.IP_address)!.push({
             telegram_id: user.telegram_id,
             username: user.username,
-            referral_count: same_ip_referral.length,
-            referrals: same_ip_referral.map((referral: IUser) => ({
+            referral_count: referrals.length,
+            
+            referrals: referrals.map((referral: IUser) => ({
               telegram_id: referral.telegram_id,
               username: referral.username,
-              IP_address: referral.IP_address
+              IP_address: referral.IP_address,
+              xp: referral.xp,
             }))
           });
           console.log(`Processed users: ${user.telegram_id},
             ${user.username},
-            ${same_ip_referral.length}}`);
+            ${referrals.length}}`);
         }
       }
     }
@@ -461,7 +463,7 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
                   <h4>Referrals:</h4>
                   <ul>
                     ${user.referrals.map((referral: any) => `
-                      <li>${referral?.username} (Telegram ID: ${referral?.telegram_id}, IP Address: ${referral?.IP_address})</li>
+                      <li>${referral?.username} (Telegram ID: ${referral?.telegram_id}, IP Address: ${referral?.IP_address}, XP: ${referral?.xp})</li>
                     `).join('')}
                   </ul>
                 </div>
