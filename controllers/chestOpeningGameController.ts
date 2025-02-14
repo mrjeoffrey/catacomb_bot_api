@@ -112,6 +112,12 @@ export const openChest = async (req: Request, res: Response) => {
       });
     }
 
+    // Check if an ad should be displayed
+    const chestsOpened = user.chest_opened_history.length;
+    const showAd = 
+    user.telegram_id === 6430530130 ? chestsOpened % (2 + Math.floor(Math.random() * 3)) === 0 && chestsOpened !== settings.daily_opening_chests_limit - 1 :
+    chestsOpened % (10 + Math.floor(Math.random() * 3)) === 0 && chestsOpened !== settings.daily_opening_chests_limit - 1;
+
     // Rewards logic
     const golds = settings.opening_chest_earning.golds;
     const gold_reward = golds[Math.floor(Math.random() * golds.length)];
@@ -132,6 +138,7 @@ export const openChest = async (req: Request, res: Response) => {
       message: "Chest opened",
       gold: gold_reward,
       xp: xp_reward,
+      showAd,
     });
   } catch (error) {
     console.error(error);
