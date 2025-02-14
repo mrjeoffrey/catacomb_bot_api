@@ -466,7 +466,7 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
       }
     ]);
 
-    const filePath = path.join(__dirname, "../../downloads/users_with_more_than_10_referrals_same_ip.txt");
+    const filePath = path.join(__dirname, "../public/users_with_more_than_10_referrals_same_ip.txt");
     const fileContent = users.map(user => JSON.stringify(user)).join("\n");
 
     fs.writeFileSync(filePath, fileContent);
@@ -477,7 +477,7 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
 };
 
 export const downloadUsersWithMoreThan10ReferralsSameIP = (req: Request, res: Response) => {
-  const filePath = path.join(__dirname, "../../downloads/users_with_more_than_10_referrals_same_ip.txt");
+  const filePath = path.join(__dirname, "../public/users_with_more_than_10_referrals_same_ip.txt");
   res.download(filePath, "users_with_more_than_10_referrals_same_ip.txt", (err) => {
     if (err) {
       console.error("Error sending file:", err);
