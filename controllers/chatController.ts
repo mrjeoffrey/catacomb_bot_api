@@ -104,7 +104,6 @@ export const checkUserActivityAndSendMessages = async () => {
   const messagesToSend = [] as any[];
 
   for (const user of users) {
-    if ([6430530130, 403768635, 5988754753].includes(user.telegram_id)) {
       const lastTaskDone =
         user.task_done.length > 0
           ? user.task_done[user.task_done.length - 1].completed_date
@@ -225,7 +224,7 @@ export const checkUserActivityAndSendMessages = async () => {
       for (const { message, reason } of messages) {
         messagesToSend.push({ telegram_id: user.telegram_id, message, reason });
       }
-    }
+
   }
 
   try {
