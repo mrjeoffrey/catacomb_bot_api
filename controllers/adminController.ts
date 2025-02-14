@@ -424,14 +424,24 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
               IP_address: referral.IP_address
             }))
           });
+          console.log(`Processed users: ${{
+            telegram_id: user.telegram_id,
+            username: user.username,
+            referral_count: same_ip_referral.length,
+            referrals: same_ip_referral.map((referral: IUser) => ({
+              telegram_id: referral.telegram_id,
+              username: referral.username,
+              IP_address: referral.IP_address
+            }))
+          }}`);
+
         }
       }
-
-      console.log(`Processed user: ${user.username}`);
+     
     }
 
     const result = Array.from(userMap.entries()).filter(([_, users]) => users.length > 1);
-
+    
     const filePath = path.join(__dirname, "../public/users_with_more_than_10_referrals_same_ip.html");
     const fileContent = `
       <html>
