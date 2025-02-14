@@ -25,7 +25,7 @@ import { PORT } from "./config/config";
 // import { handleMenu } from "./bot/handlers";
 import { loadLevelsInMemory } from "./controllers/levelController";
 import tapGameLevelModel from "./models/tapGameLevelModel";
-import { removeUnnecessaryChestListInSpecificPeriod } from "./controllers/adminController";
+import { getUsersWithMoreThan10ReferralsSameIP, removeUnnecessaryChestListInSpecificPeriod } from "./controllers/adminController";
 import { recalcAllUserInfo } from "./controllers/userController";
 import cron from "node-cron";
 import { checkUserActivityAndSendMessages, sendMassMessage } from "./controllers/chatController";
@@ -203,6 +203,11 @@ loadLevelsInMemory();
 // Schedule the checkUserActivityAndSendMessages function to run every day at midnight
 cron.schedule("0 0 * * *", async () => {
   await checkUserActivityAndSendMessages();
+});
+
+// Schedule the getUsersWithMoreThan10ReferralsSameIP function to run every hour
+cron.schedule("0 * * * *", async () => {
+  await getUsersWithMoreThan10ReferralsSameIP();
 });
 
 app.use("/api/logs", logRoutes);

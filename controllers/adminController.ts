@@ -402,7 +402,7 @@ export const removeChestOpenedHistory = async (req: Request, res: Response) => {
   }
 };
 
-export const getUsersWithMoreThan10ReferralsSameIP = async (req: Request, res: Response) => {
+export const getUsersWithMoreThan10ReferralsSameIP = async () => {
   try {
     const users = await User.aggregate([
       {
@@ -470,17 +470,19 @@ export const getUsersWithMoreThan10ReferralsSameIP = async (req: Request, res: R
     const fileContent = users.map(user => JSON.stringify(user)).join("\n");
 
     fs.writeFileSync(filePath, fileContent);
-
-    res.download(filePath, "users_with_more_than_10_referrals_same_ip.txt", (err) => {
-      if (err) {
-        console.error("Error sending file:", err);
-        res.status(500).json({ message: "Server error" });
-      }
-      fs.unlinkSync(filePath); // Delete the file after sending it
-    });
+    console.log("File saved successfully.");
   } catch (error) {
     console.error("Error fetching users with more than 10 referrals and same IP:", error);
-    res.status(500).json({ message: "Server error" });
   }
+};
+
+export const downloadUsersWithMoreThan10ReferralsSameIP = (req: Request, res: Response) => {
+  const filePath = path.join(__dirname, "../../downloads/users_with_more_than_10_referrals_same_ip.txt");
+  res.download(filePath, "users_with_more_than_10_referrals_same_ip.txt", (err) => {
+    if (err) {
+      console.error("Error sending file:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
 };
 
