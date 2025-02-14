@@ -404,70 +404,71 @@ export const removeChestOpenedHistory = async (req: Request, res: Response) => {
 
 export const getUsersWithMoreThan10ReferralsSameIP = async () => {
   try {
-    const users = await User.aggregate([
-      {
-        $lookup: {
-          from: "users",
-          localField: "_id",
-          foreignField: "referred_by",
-          as: "referrals"
-        }
-      },
-      {
-        $match: {
-          "referrals.10": { $exists: true }
-        }
-      },
-      {
-        $project: {
-          telegram_id: 1,
-          username: 1,
-          IP_address: 1,
-          referrals: {
-            $filter: {
-              input: "$referrals",
-              as: "referral",
-              cond: {
-                $not: {
-                  $in: ["$$referral._id", "$valid_referrals.id"]
-                }
-              }
-            }
-          }
-        }
-      },
-      {
-        $group: {
-          _id: "$IP_address",
-          users: {
-            $push: {
-              telegram_id: "$telegram_id",
-              username: "$username",
-              referral_count: { $size: "$referrals" },
-              referrals: {
-                $map: {
-                  input: "$referrals",
-                  as: "referral",
-                  in: {
-                    telegram_id: "$$referral.telegram_id",
-                    username: "$$referral.username"
-                  }
-                }
-              }
-            }
-          },
-          count: { $sum: 1 }
-        }
-      },
-      {
-        $match: {
-          count: { $gt: 1 }
-        }
-      }
-    ]);
+    const users = await User.find();
+    const userMap = new Map();
 
-    const filePath = path.join(__dirname, "../public/users_with_more_than_10_referrals_same_ip.txt");
-    const fileContent = users.map(user => JSON.stringify(user)).join("\n");
+    for (const user of users) {
+      const referrals = await User.find({ referred_by: user._id });
+      const validReferrals = referrals.filter(referral => 
+        !user.valid_referrals.some(validReferral => validReferral.id.equals(referral._id))
+      );
+
+      if (validReferrals.length > 10) {
+        if (!userMap.has(user.IP_address)) {
+          userMap.set(user.IP_address, []);
+        }
+        userMap.get(user.IP_address).push({
+          telegram_id: user.telegram_id,
+          username: user.username,
+          referral_count: validReferrals.length,
+          referrals: validReferrals.map(referral => ({
+            telegram_id: referral.telegram_id,
+            username: referral.username,
+            IP_address: referral.IP_address
+          }))
+        });
+      }
+
+      console.log(`Processed user: ${user.username}`);
+    }
+
+    const result = Array.from(userMap.entries()).filter(([_, users]) => users.length > 1);
+
+    const filePath = path.join(__dirname, "../public/users_with_more_than_10_referrals_same_ip.html");
+    const fileContent = `
+      <html>
+      <head>
+        <title>Users with More Than 10 Referrals</title>
+        <style>
+          body { font-family: Arial, sans-serif; }
+          .user { margin-bottom: 20px; }
+          .referrals { margin-left: 20px; }
+        </style>
+      </head>
+      <body>
+        <h1>Users with More Than 10 Referrals</h1>
+        ${result.map(([ip, users]) => `
+          <div class="ip-group">
+            <h2>IP Address: ${ip}</h2>
+            ${users.map(user => `
+              <div class="user">
+                <h3>${user.username} (Telegram ID: ${user.telegram_id})</h3>
+                <p>Referral Count: ${user.referral_count}</p>
+                <div class="referrals">
+                  <h4>Referrals:</h4>
+                  <ul>
+                    ${user.referrals.map(referral => `
+                      <li>${referral.username} (Telegram ID: ${referral.telegram_id}, IP Address: ${referral.IP_address})</li>
+                    `).join('')}
+                  </ul>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `).join('')}
+      </body>
+      </html>
+    `;
 
     fs.writeFileSync(filePath, fileContent);
     console.log("File saved successfully.");
@@ -477,8 +478,8 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
 };
 
 export const downloadUsersWithMoreThan10ReferralsSameIP = (req: Request, res: Response) => {
-  const filePath = path.join(__dirname, "../public/users_with_more_than_10_referrals_same_ip.txt");
-  res.download(filePath, "users_with_more_than_10_referrals_same_ip.txt", (err) => {
+  const filePath = path.join(__dirname, "../public/users_with_more_than_10_referrals_same_ip.html");
+  res.download(filePath, "users_with_more_than_10_referrals_same_ip.html", (err) => {
     if (err) {
       console.error("Error sending file:", err);
       res.status(500).json({ message: err });
