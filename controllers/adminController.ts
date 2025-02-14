@@ -405,7 +405,7 @@ export const removeChestOpenedHistory = async (req: Request, res: Response) => {
 export const getUsersWithMoreThan10ReferralsSameIP = async () => {
   try {
     const users: IUser[] = await User.find();
-    const userMap = new Map<string, any[]>();
+    const userMap = new Map<number, any>();
 
     for (const user of users) {
       const referrals: IUser[] = await User.find({ referred_by: user._id });
@@ -420,19 +420,18 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
 
       for (const [ip, sameIpReferrals] of ipCountMap.entries()) {
         if (sameIpReferrals.length > 10) {
-          if (!userMap.has(ip)) {
-            userMap.set(ip, []);
-          }
-          userMap.get(ip)!.push({
+          userMap.set(user.telegram_id, {
             telegram_id: user.telegram_id,
             username: user.username,
             location: user.location,
+            xp: user.xp,
             referral_count: sameIpReferrals.length,
             referrals: sameIpReferrals.map((referral: IUser) => ({
               telegram_id: referral.telegram_id,
               username: referral.username,
               IP_address: referral.IP_address,
-              location: referral.location
+              location: referral.location,
+              xp: referral.xp
             }))
           });
           console.log(`Processed user: ${user.username}, Telegram ID: ${user.telegram_id}, IP Address: ${user.IP_address}, Referrals Processed: ${sameIpReferrals.length}`);
@@ -440,7 +439,7 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
       }
     }
 
-    const result = Array.from(userMap.entries()).filter(([_, users]) => users.length > 1);
+    const result = Array.from(userMap.values());
 
     const filePath = path.join(__dirname, "../public/users_with_more_than_10_referrals_same_ip.html");
     const fileContent = `
@@ -455,23 +454,18 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
       </head>
       <body>
         <h1>Users with More Than 10 Referrals</h1>
-        ${result.map(([ip, users]) => `
-          <div class="ip-group">
-            <h2>IP Address: ${ip}</h2>
-            ${users.map(user => `
-              <div class="user">
-                <h3>${user.username} (Telegram ID: ${user.telegram_id}, Location: ${user.location})</h3>
-                <p>Referral Count: ${user.referral_count}</p>
-                <div class="referrals">
-                  <h4>Referrals:</h4>
-                  <ul>
-                    ${user.referrals.map((referral: any) => `
-                      <li>${referral?.username} (Telegram ID: ${referral?.telegram_id}, IP Address: ${referral?.IP_address}, Location: ${referral?.location})</li>
-                    `).join('')}
-                  </ul>
-                </div>
-              </div>
-            `).join('')}
+        ${result.map(user => `
+          <div class="user">
+            <h3>${user.username} (Telegram ID: ${user.telegram_id}, Location: ${user.location}, XP: ${user.xp})</h3>
+            <p>Referral Count: ${user.referral_count}</p>
+            <div class="referrals">
+              <h4>Referrals:</h4>
+              <ul>
+                ${user.referrals.map((referral: any) => `
+                  <li>${referral?.username} (Telegram ID: ${referral?.telegram_id}, IP Address: ${referral?.IP_address}, Location: ${referral?.location}, XP: ${referral?.xp})</li>
+                `).join('')}
+              </ul>
+            </div>
           </div>
         `).join('')}
       </body>
