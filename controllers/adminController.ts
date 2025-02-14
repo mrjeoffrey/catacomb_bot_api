@@ -428,16 +428,9 @@ export const getUsersWithMoreThan10ReferralsSameIP = async () => {
               IP_address: referral.IP_address
             }))
           });
-          console.log(`Processed users: ${{
-            telegram_id: user.telegram_id,
-            username: user.username,
-            referral_count: same_ip_referral.length,
-            referrals: same_ip_referral.map((referral: IUser) => ({
-              telegram_id: referral.telegram_id,
-              username: referral.username,
-              IP_address: referral.IP_address
-            }))
-          }}`);
+          console.log(`Processed users: ${user.telegram_id},
+            ${user.username},
+            ${same_ip_referral.length}}`);
         }
       }
     }
