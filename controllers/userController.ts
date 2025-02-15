@@ -86,7 +86,9 @@ export const recalcAllUserInfo = async () => {
       user.current_season_xp = seasonXP;
       user.current_season_gold = seasonGold;
       await user.save();
+      console.log(user,"__reclaced__")
     }))
+    console.log("__Finished___")
   return usersWithDetails;
 }
 
