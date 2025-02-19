@@ -292,8 +292,8 @@ export const canClaimAdTicketToday = (ticketsHistory: any[]): boolean => {
     .filter((history) => history.due_to === "ad")
     .sort((a, b) => b.date.getTime() - a.date.getTime())[0]; // Get the most recent claim
 
-  // Return true if there's no claim or the last claim was more than 24 hours ago
-  return !lastAdClaim || currentDate.getTime() - lastAdClaim.date.getTime() >= oneDayInMs;
+  // Return true if there's no claim or the last claim was more than 12 hours ago
+  return !lastAdClaim || currentDate.getTime() - lastAdClaim.date.getTime() >= (oneDayInMs / 2);
 };
 
 export const claimAdsgramTicket = async (req: Request, res: Response) => {
