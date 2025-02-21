@@ -97,7 +97,8 @@ export const getRankingsInSpecificPeriod = async (req: Request, res: Response) =
         return {
           seasonXP: seasonXP,
           user: user.telegram_id,
-          username
+          username,
+          telegram_name: user.username,
         };
       })
     );
