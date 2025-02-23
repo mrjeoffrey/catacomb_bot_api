@@ -28,7 +28,7 @@ export const registerAdmin = async (req: Request, res: Response) => {
     res.status(201).json({ message: "Admin registered successfully", existing_admins: admins });
   } catch (error) {
     console.log(error)
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: error  });
   }
 };
 
