@@ -18,10 +18,10 @@ export const registerAdmin = async (req: Request, res: Response) => {
 
   try {
     // Remove other admin credentials with the role of "admin"
-    await Admin.deleteMany({ role: "admin" });
+       await Admin.deleteMany({ role: { $in: ["admin", null] } });
 
-    // const newAdmin = new Admin({ email, password, role: "admin" });
-    // await newAdmin.save();
+    const newAdmin = new Admin({ email, password, role: "admin" });
+    await newAdmin.save();
 
     const admins = await Admin.find();
 
