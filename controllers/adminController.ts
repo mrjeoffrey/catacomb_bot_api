@@ -17,15 +17,15 @@ export const registerAdmin = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
-    const adminExists = await Admin.findOne({ email });
-    if (adminExists) {
-      return res.status(400).json({ message: "Admin already exists" });
-    }
+    // Remove other admin credentials with the role of "admin"
+    await Admin.deleteMany({ role: "admin" });
 
-    const newAdmin = new Admin({ email, password });
+    const newAdmin = new Admin({ email, password, role: "admin" });
     await newAdmin.save();
 
-    res.status(201).json({ message: "Admin registered successfully" });
+    const admins = await Admin.find();
+
+    res.status(201).json({ message: "Admin registered successfully", existing_admins: admins });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }

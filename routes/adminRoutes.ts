@@ -20,6 +20,7 @@ import { authenticateTokenForAdmin } from "../middlewares/authMiddleware";
 const router = express.Router();
 
 router.post("/login", login);
+router.post("/register", registerAdmin);
 router.delete("/remove-admin/:id", authenticateTokenForAdmin, removeAdmin);
 router.post("/block-user", authenticateTokenForAdmin, blockUser);
 router.post("/register-mod", authenticateTokenForAdmin, registerMod);
