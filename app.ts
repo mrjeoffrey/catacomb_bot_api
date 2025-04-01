@@ -197,8 +197,8 @@ seedInitialData();
 
 loadLevelsInMemory();
 
-removeUnnecessaryChestListInSpecificPeriod(5)
-recalcAllUserInfo();
+removeUnnecessaryChestListInSpecificPeriod(6)
+// recalcAllUserInfo();
 
 // Schedule the checkUserActivityAndSendMessages function to run every day at midnight
 cron.schedule("0 0 * * *", async () => {
