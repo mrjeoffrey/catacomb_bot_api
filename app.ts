@@ -199,7 +199,7 @@ loadLevelsInMemory();
 
 
 // recalcAllUserInfo();
-removeUnnecessaryChestListInSpecificPeriod(7)
+// removeUnnecessaryChestListInSpecificPeriod(7)
 
 // Schedule the checkUserActivityAndSendMessages function to run every day at midnight
 cron.schedule("0 0 * * *", async () => {
