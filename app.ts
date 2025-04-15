@@ -198,7 +198,7 @@ seedInitialData();
 loadLevelsInMemory();
 
 
-// recalcAllUserInfo();
+recalcAllUserInfo();
 // removeUnnecessaryChestListInSpecificPeriod(6)
 // removeUnnecessaryChestListInSpecificPeriod(7)
 
